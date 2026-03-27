@@ -11,4 +11,11 @@ wheels/
 .env
 
 # Upload folders
-uploads/*
+uploads/
+
+# Logs
+logs/
+
+# IDE files
+.vscode/
+.idea/ 
