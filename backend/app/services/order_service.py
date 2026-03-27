@@ -2,14 +2,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status, UploadFile
 from uuid import UUID
 from typing import Optional
-from decimal import Decimal
 
 from app.crud.order_crud import order_crud
 from app.crud.cart_crud import cart_crud
 from app.crud.product_crud import product_crud
 from app.models.order import Order, OrderStatus
-from app.schemas.order import CheckoutRequest, UpdateOrderStatusRequest
-from app.core.file_upload import save_upload_file
+from app.schemas.order import CheckoutRequest, UpdateOrderStatusRequest, RequestReturnRequest
+from app.core.file_upload import save_prescription
 
 
 class OrderService:
@@ -94,7 +93,7 @@ class OrderService:
                 detail="Order does not require a prescription",
             )
 
-        file_name, file_type, url = await save_upload_file(file)
+        file_name, file_type, url = await save_prescription(file)
         await order_crud.update(db, order, {
             "prescription_ref": url,
             "status": OrderStatus.PENDING,
@@ -135,8 +134,13 @@ class OrderService:
                 detail="Order not found",
             )
 
-        # Only pending or awaiting prescription orders can be cancelled by customer
-        cancellable = {OrderStatus.PENDING, OrderStatus.AWAITING_PRESCRIPTION}
+        # Only pending or awaiting prescription or confirmed or processing orders can be cancelled by customer
+        cancellable = {
+            OrderStatus.PENDING,
+            OrderStatus.AWAITING_PRESCRIPTION,
+            OrderStatus.CONFIRMED,
+            OrderStatus.PROCESSING,
+        }
         if order.status not in cancellable:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -190,6 +194,54 @@ class OrderService:
                 detail="Order not found",
             )
         await order_crud.update(db, order, {"status": data.status})
+        await db.commit()
+        return await order_crud.get_by_id(db, order_id)
+    
+
+    async def request_return(
+        self, db: AsyncSession, user_id: UUID, order_id: UUID,
+        data: RequestReturnRequest,
+    ) -> Order:
+        order = await order_crud.get_by_id(db, order_id)
+        if not order or order.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Order not found")
+        if order.status != OrderStatus.DELIVERED:
+            raise HTTPException(
+                status_code=400,
+                detail="Only delivered orders can be returned",
+            )
+        await order_crud.update(db, order, {
+            "status": OrderStatus.RETURN_REQUESTED,
+            "return_reason": data.reason.value,
+            "return_note": data.note,
+        })
+        await db.commit()
+        return await order_crud.get_by_id(db, order_id)
+
+    async def handle_return(
+        self, db: AsyncSession, order_id: UUID, approve: bool
+    ) -> Order:
+        from app.crud.payment_crud import payment_crud
+        from app.models.payment import PaymentStatus
+
+        order = await order_crud.get_by_id(db, order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        if order.status != OrderStatus.RETURN_REQUESTED:
+            raise HTTPException(
+                status_code=400,
+                detail="Order is not in return_requested status",
+            )
+
+        if approve:
+            payment = await payment_crud.get_by_order_id(db, order_id)
+            if payment:
+                await payment_crud.update(db, payment, {"status": PaymentStatus.REFUNDED})
+            await order_crud.update(db, order, {"status": OrderStatus.REFUNDED})
+        else:
+            # Reject — revert to delivered
+            await order_crud.update(db, order, {"status": OrderStatus.DELIVERED})
+
         await db.commit()
         return await order_crud.get_by_id(db, order_id)
 

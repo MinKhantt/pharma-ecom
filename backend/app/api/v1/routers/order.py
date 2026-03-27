@@ -8,6 +8,8 @@ from app.schemas.order import (
     OrderResponse,
     OrderListResponse,
     UpdateOrderStatusRequest,
+    RequestReturnRequest, 
+    ApproveRejectReturnRequest
 )
 from app.models.order import OrderStatus
 from app.services.order_service import order_service
@@ -69,6 +71,15 @@ async def upload_prescription(
 ):
     return await order_service.upload_prescription(db, current_user.id, order_id, file)
 
+@router.post("/me/{order_id}/return", response_model=OrderResponse)
+async def request_return(
+    order_id: UUID,
+    data: RequestReturnRequest,
+    db: async_session,
+    current_user: User = Depends(get_current_active_profile),
+):
+    return await order_service.request_return(db, current_user.id, order_id, data)
+
 
 # ── Admin endpoints ───────────────────────────────────────────────────────────
 
@@ -118,3 +129,14 @@ async def update_order_status(
             detail="Admin access required",
         )
     return await order_service.update_order_status(db, order_id, data)
+
+@router.patch("/{order_id}/return", response_model=OrderResponse)
+async def handle_return(
+    order_id: UUID,
+    data: ApproveRejectReturnRequest,
+    db: async_session,
+    current_user: User = Depends(get_current_user),
+):
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return await order_service.handle_return(db, order_id, data.approve)

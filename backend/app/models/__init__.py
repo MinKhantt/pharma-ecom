@@ -5,8 +5,10 @@ from .cart import Cart, CartItem
 from .order import Order, OrderItem, OrderStatus
 from .payment import Payment, PaymentMethod, PaymentStatus
 from .chat import Conversation, ConversationMember, Message
-from app.models.customer import CustomerProfile
-from app.models.ai_chat import AIChatMessage
+from .customer import CustomerProfile
+from .ai_chat import AIChatMessage
+from .review import ShopReview
+from .article import Article, ArticleCategory
 
 __all__ = [
     "Base",
@@ -27,4 +29,7 @@ __all__ = [
     "Message",
     "CustomerProfile",
     "AIChatMessage",
+    "ShopReview",
+    "Article",
+    "ArticleCategory",
 ]

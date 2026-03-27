@@ -3,7 +3,7 @@ from fastapi import status as http_status
 from uuid import UUID
 
 from app.db.database import async_session
-from app.schemas.payment import PaymentCreate, PaymentResponse, RefundRequest
+from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.services.payment_service import payment_service
 from app.api.v1.dependencies import get_current_user, get_current_active_profile
 from app.models.user import User

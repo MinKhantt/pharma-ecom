@@ -5,6 +5,7 @@ from uuid import UUID
 from typing import Optional
 
 from app.models.chat import Conversation, ConversationMember, Message
+from app.models.user import User
 
 
 class ChatCRUD:
@@ -13,7 +14,7 @@ class ChatCRUD:
         return (
             select(Conversation)
             .options(
-                selectinload(Conversation.members),
+                selectinload(Conversation.members).joinedload(ConversationMember.user).joinedload(User.profile),
                 selectinload(Conversation.messages),
             )
         )
@@ -21,7 +22,11 @@ class ChatCRUD:
     def _summary_query(self):
         return (
             select(Conversation)
-            .options(selectinload(Conversation.members))
+            .options(
+                selectinload(Conversation.members)
+                .joinedload(ConversationMember.user)
+                .joinedload(User.profile)
+            )
         )
 
     async def create_conversation(
@@ -152,6 +157,5 @@ class ChatCRUD:
             .values(updated_at=func.now())
         )
         await db.flush()
-
 
 chat_crud = ChatCRUD()

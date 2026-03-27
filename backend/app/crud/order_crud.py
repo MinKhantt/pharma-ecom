@@ -1,11 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 from uuid import UUID
 from typing import Optional
 
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.product import Product
+from app.models.user import User
 
 
 class OrderCRUD:
@@ -14,6 +15,7 @@ class OrderCRUD:
         return (
             select(Order)
             .options(
+                joinedload(Order.user).joinedload(User.profile),
                 selectinload(Order.items)
                 .selectinload(OrderItem.product)
                 .selectinload(Product.images),

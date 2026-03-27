@@ -17,6 +17,7 @@ class OrderStatus(str, enum.Enum):
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
+    RETURN_REQUESTED = "return_requested"
 
 
 class Order(Base):
@@ -31,6 +32,8 @@ class Order(Base):
     prescription_ref = Column(String(500), nullable=True)
     delivery_address = Column(Text, nullable=True)
     notes = Column(Text, nullable=True)
+    return_reason = Column(String, nullable=True)   # ← add
+    return_note   = Column(String, nullable=True)
 
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

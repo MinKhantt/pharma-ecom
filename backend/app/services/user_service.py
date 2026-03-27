@@ -121,8 +121,12 @@ class UserService:
             await user_crud.update_profile(db, user_id, profile_fields)
 
         await db.commit()
-        await db.refresh(user)
-        return user
+        result = await db.execute(
+            select(User)
+            .where(User.id == user.id)
+            .options(selectinload(User.profile))
+        )
+        return result.scalar_one()
 
     # ── Admin: get all users ──────────────────────────────────────────────────
 
@@ -200,6 +204,7 @@ class UserService:
                 email=email,
                 hashed_password=hash_password(secrets.token_urlsafe(32)),  # random unusable password
                 is_active=True,
+                is_profile_complete=False,
             )
             await user_crud.create(db, user)
 
@@ -208,12 +213,11 @@ class UserService:
             cart = Cart(user_id=user.id, total_amount=0)
             db.add(cart)
 
-            # Auto-create profile with avatar from Google
+            # Pre-create profile with avatar from Google — user fills the rest
             from app.models.customer import CustomerProfile
             profile = CustomerProfile(user_id=user.id, avatar_url=avatar_url)
             db.add(profile)
 
-            user.is_profile_complete = True
             await db.commit()
 
         # Re-fetch with profile eagerly loaded

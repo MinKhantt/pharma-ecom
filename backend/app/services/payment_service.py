@@ -23,8 +23,9 @@ class PaymentService:
                 detail="Order not found",
             )
 
-        # Order must be in PENDING state to accept payment
-        if order.status not in {OrderStatus.PENDING, OrderStatus.CONFIRMED}:
+        # Only allow payment for pending, confirmed, or awaiting prescription orders
+        allowable_statuses = {OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.AWAITING_PRESCRIPTION}
+        if order.status not in allowable_statuses:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Order cannot be paid in status: {order.status.value}",
@@ -38,6 +39,7 @@ class PaymentService:
                 detail="Payment already exists for this order",
             )
 
+
         # Create payment — fake instant completion for school project
         payment = await payment_crud.create(db, {
             "order_id": data.order_id,
@@ -49,7 +51,10 @@ class PaymentService:
         })
 
         # Update order status to CONFIRMED after payment
-        await order_crud.update(db, order, {"status": OrderStatus.CONFIRMED})
+        if order.status == OrderStatus.AWAITING_PRESCRIPTION:
+            await order_crud.update(db, order, {"status": OrderStatus.AWAITING_PRESCRIPTION})
+        else:
+            await order_crud.update(db, order, {"status": OrderStatus.CONFIRMED})
 
         await db.commit()
         await db.refresh(payment)
@@ -96,11 +101,12 @@ class PaymentService:
                 detail="Only completed payments can be refunded",
             )
 
-        # Only refund if order is cancelled
-        if order.status != OrderStatus.CANCELLED:
+        # Allow refund from delivered (return) or cancelled
+        refundable_statuses = {OrderStatus.DELIVERED, OrderStatus.CANCELLED}
+        if order.status not in refundable_statuses:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cancel the order before requesting a refund",
+                detail="Order must be delivered or cancelled to request a refund",
             )
 
         await payment_crud.update(db, payment, {"status": PaymentStatus.REFUNDED})

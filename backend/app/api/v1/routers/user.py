@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi import APIRouter, HTTPException, UploadFile, status, Depends, Query, File
 from uuid import UUID
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.db.database import async_session
 from app.schemas.user import (
@@ -11,6 +13,7 @@ from app.schemas.user import (
 from app.services.user_service import user_service
 from app.api.v1.dependencies import get_current_user, get_current_active_profile
 from app.models.user import User
+from app.core.file_upload import save_upload_file
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -32,7 +35,7 @@ async def complete_profile(
 @router.get("/me", response_model=UserWithProfileResponse)
 async def get_me(
     db: async_session,
-    current_user: User = Depends(get_current_active_profile),
+    current_user: User = Depends(get_current_user),
 ):
     user = await user_service.get_me(db, current_user.id)
     return UserWithProfileResponse.model_validate(user)
@@ -121,6 +124,7 @@ async def delete_user(
         )
     await user_service.delete_user(db, user_id)
 
+
 @router.patch("/me/password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(
     data: ChangePasswordRequest,
@@ -128,3 +132,23 @@ async def change_password(
     current_user: User = Depends(get_current_active_profile),
 ):
     await user_service.change_password(db, current_user.id, data)
+
+@router.post("/me/avatar", response_model=UserWithProfileResponse)
+async def upload_avatar(
+    db: async_session,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    _, _, url = await save_upload_file(file)
+    await user_service.update_me(
+        db, current_user.id, UpdateUserRequest(avatar_url=url)
+    )
+
+    # Re-fetch with profile eagerly loaded
+    result = await db.execute(
+        select(User)
+        .where(User.id == current_user.id)
+        .options(selectinload(User.profile))
+    )
+    user = result.scalar_one()
+    return UserWithProfileResponse.model_validate(user)

@@ -1,4 +1,6 @@
-from pydantic import BaseModel, field_validator
+import enum
+
+from pydantic import BaseModel, field_validator, model_validator
 from uuid import UUID
 from decimal import Decimal
 from datetime import datetime
@@ -15,6 +17,37 @@ class OrderItemResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class OrderUserResponse(BaseModel):
+    id: UUID
+    full_name: str
+    email: str
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def extract_profile_info(cls, data):
+        # If 'data' is a SQLAlchemy model instance
+        if hasattr(data, "profile") and data.profile:
+            data.phone_number = data.profile.phone_number
+            data.address = data.profile.address
+        return data
+
+    class Config:
+        from_attributes = True
+
+class ReturnReason(str, enum.Enum):
+    DAMAGED     = "damaged"
+    WRONG_ITEM  = "wrong_item"
+    NOT_SATISFIED = "not_satisfied"
+
+class RequestReturnRequest(BaseModel):
+    reason: ReturnReason
+    note: Optional[str] = None
+
+class ApproveRejectReturnRequest(BaseModel):
+    approve: bool
+
 
 class OrderResponse(BaseModel):
     id: UUID
@@ -24,7 +57,12 @@ class OrderResponse(BaseModel):
     prescription_ref: Optional[str]
     delivery_address: Optional[str]
     notes: Optional[str]
+    return_reason: Optional[str] = None
+    return_note:   Optional[str] = None
     updated_at: datetime
+
+    user: Optional[OrderUserResponse] = None
+
     items: list[OrderItemResponse] = []
 
     model_config = {"from_attributes": True}

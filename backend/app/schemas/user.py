@@ -60,6 +60,7 @@ class ProfileResponse(BaseModel):
 
 class UserWithProfileResponse(UserResponse):
     profile: Optional[ProfileResponse] = None
+    is_superuser: bool
 
     model_config = {"from_attributes": True}
 

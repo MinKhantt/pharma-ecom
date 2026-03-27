@@ -28,7 +28,10 @@ class CategoryService:
         await db.refresh(category)
         return category
 
-    async def get_all(self, db: AsyncSession) -> list[Category]:
+    async def get_all(
+        self, 
+        db: AsyncSession,
+    ) -> list[Category]:
         return await category_crud.get_all(db)
 
     async def get_by_id(self, db: AsyncSession, category_id: UUID) -> Category:

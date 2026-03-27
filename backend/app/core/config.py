@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Admin
     ADMIN_SECRET_KEY: str
 
+    # Frontend
+    FRONTEND_URL: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

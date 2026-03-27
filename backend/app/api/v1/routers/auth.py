@@ -2,6 +2,7 @@ import datetime as dt
 from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from fastapi.responses import RedirectResponse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -132,13 +133,18 @@ async def google_callback(request: Request, db: async_session):
         avatar_url=user_info.get("picture"),
     )
 
-    return {
-        "access_token": create_access_token(str(user.id)),
-        "refresh_token": create_refresh_token(str(user.id)),
-        "token_type": "bearer",
-        "is_profile_complete": user.is_profile_complete,
-        "user": UserWithProfileResponse.model_validate(user),
-    }
+    access_token = create_access_token(str(user.id))
+    refresh_token = create_refresh_token(str(user.id))
+
+        # Redirect to frontend with tokens in query params
+    redirect_url = (
+        f"{settings.FRONTEND_URL}/auth/google/callback"
+        f"?access_token={access_token}"
+        f"&refresh_token={refresh_token}"
+        f"&is_profile_complete={str(user.is_profile_complete).lower()}"
+    )
+
+    return RedirectResponse(url=redirect_url)
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(data: RefreshTokenRequest, db: async_session):
