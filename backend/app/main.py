@@ -20,14 +20,21 @@ uploads_dir.mkdir(exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY)
-
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Session middleware
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
+    same_site="lax",
+    https_only=False,   # Set to True in production with HTTPS
 )
 
 api_prefix_v1 = f"{settings.API_PREFIX}{settings.API_V1}"
