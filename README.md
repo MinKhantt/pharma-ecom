@@ -90,11 +90,11 @@ cd pharma-ecom
 
 ### 2. Setup Backend
 
-See: backend/README.md
+[Go to Backend Setup →](backend/README.md)
 
 ### 3. Setup Frontend
 
-See: frontend/README.md
+[Go to Frontend Setup →](frontend/README.md)
 
 ------------------------------------------------------------------------
 
