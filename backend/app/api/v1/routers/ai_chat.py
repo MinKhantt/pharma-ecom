@@ -17,8 +17,8 @@ async def chat(
     current_user: User = Depends(get_current_active_profile),
 ):
     """Send a message and get AI reply. History is loaded from DB automatically."""
-    reply, history = await ai_chat_service.chat(db, current_user.id, data)
-    return AIChatResponse(reply=reply, history=history)
+    result = await ai_chat_service.chat(db, current_user.id, data.message)
+    return AIChatResponse(reply=result["reply"], history=result["history"])
 
 
 @router.get("/history", response_model=list[AIChatMessageResponse])

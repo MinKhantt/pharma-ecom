@@ -88,48 +88,60 @@ export default function AIChatPage() {
             <p className="text-xs text-muted-foreground">AI-powered pharmacy assistant</p>
           </div>
           <div className="ml-auto flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-muted-foreground">Online</span>
+            {localMessages.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => clearHistory()}
+                disabled={isClearing}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear history
+              </Button>
+            )}
           </div>
         </div>
 
-        {localMessages.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => clearHistory()}
-            disabled={isClearing}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Clear history
-          </Button>
-        )}
+
 
         {/* Messages */}
         <ScrollArea className="flex-1 p-4">
           {localMessages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center py-12">
+            <div className="flex flex-col items-center justify-center h-full text-center py-5">
               <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                 <Bot className="h-8 w-8 text-primary" />
               </div>
               <h3 className="font-display text-lg font-semibold mb-2">Hello! I'm ShweLaMinBot</h3>
-              <p className="text-sm text-muted-foreground max-w-xs mb-6">
-                I can help you with questions about medicines, dosages, side effects, and product recommendations.
+              <p className="text-sm text-muted-foreground max-w-xs mb-4">
+                I can help you with questions about medicines, dosages, side effects and product recommendations.
               </p>
-              <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
-                {[
-                  "What's the dosage for paracetamol?",
-                  "Do you have antibiotics?",
-                  "What medicines help with headaches?",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => { setInput(suggestion); }}
-                    className="text-left text-sm px-4 py-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
+
+              {/* Enhanced suggestion grid with categories */}
+              <div className="space-y-3 w-full max-w-xs">
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    "What's the dosage for paracetamol?",
+                    "Do you have antibiotics in stock?",
+                    "What medicines help with headaches?",
+                    "Show me products under 5000 MMK",
+                    "What's available for Vitamins & Supplements?"
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      onClick={() => { setInput(suggestion); }}
+                      className="text-left text-sm px-4 py-2.5 rounded-lg border border-border hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* NEW: Feature highlight tooltip (optional) */}
+              <div className="mt-6 text-xs text-muted-foreground/60">
+                <span className="inline-flex items-center gap-1">
+                  ✨ Searches product names, manufacturers & descriptions
+                </span>
               </div>
             </div>
           ) : (
@@ -196,7 +208,7 @@ export default function AIChatPage() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about medicines, dosages, side effects..."
+              placeholder="Ask about medicines, dosages, side effects and  product recommendations..."
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
               disabled={isPending}
             />
