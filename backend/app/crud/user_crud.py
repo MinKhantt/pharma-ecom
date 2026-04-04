@@ -2,66 +2,47 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List
 
 from app.models.user import User
 from app.models.customer import CustomerProfile
+from app.crud.base import CRUDBase
 
 
-class UserCRUD:
+class UserCRUD(CRUDBase[User]):
 
-    # ── Create ────────────────────────────────────────────────────────────────
-
-    async def create(self, db: AsyncSession, user: User) -> User:
-        db.add(user)
-        await db.flush()
-        return user
+    def _base_query(self):
+        return select(User).options(selectinload(User.profile))
 
     # ── Read ──────────────────────────────────────────────────────────────────
 
     async def get_by_id(self, db: AsyncSession, user_id: UUID) -> Optional[User]:
         result = await db.execute(
-            select(User)
-            .where(User.id == user_id)
-            .options(selectinload(User.profile))
+            self._base_query().where(User.id == user_id)
         )
         return result.scalar_one_or_none()
 
     async def get_by_email(self, db: AsyncSession, email: str) -> Optional[User]:
         result = await db.execute(
-            select(User)
-            .where(User.email == email)
-            .options(selectinload(User.profile))
+            self._base_query().where(User.email == email)
         )
         return result.scalar_one_or_none()
 
-    async def get_all(
+    async def get_all_paginated(
         self,
         db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
-    ) -> list[User]:
+    ) -> List[User]:
         result = await db.execute(
-            select(User)
-            .options(selectinload(User.profile))
+            self._base_query()
             .offset(skip)
             .limit(limit)
             .order_by(User.created_at.desc())
         )
         return result.scalars().all()
 
-    # ── Update ────────────────────────────────────────────────────────────────
-
-    async def update(
-        self,
-        db: AsyncSession,
-        user: User,
-        data: dict,
-    ) -> User:
-        for field, value in data.items():
-            setattr(user, field, value)
-        await db.flush()
-        return user
+    # ── Profile ───────────────────────────────────────────────────────────────
 
     async def update_profile(
         self,
@@ -80,12 +61,6 @@ class UserCRUD:
         await db.flush()
         return profile
 
-    # ── Delete ────────────────────────────────────────────────────────────────
-
-    async def delete(self, db: AsyncSession, user: User) -> None:
-        await db.delete(user)
-        await db.flush()
-
     # ── Helpers ───────────────────────────────────────────────────────────────
 
     async def exists_by_email(self, db: AsyncSession, email: str) -> bool:
@@ -94,12 +69,5 @@ class UserCRUD:
         )
         return result.scalar_one_or_none() is not None
 
-    async def set_active(
-        self, db: AsyncSession, user: User, is_active: bool
-    ) -> User:
-        user.is_active = is_active
-        await db.flush()
-        return user
 
-
-user_crud = UserCRUD()
+user_crud = UserCRUD(User)

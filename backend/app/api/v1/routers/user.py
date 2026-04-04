@@ -11,7 +11,7 @@ from app.schemas.user import (
     UserWithProfileResponse,
 )
 from app.services.user_service import user_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile
+from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
 from app.models.user import User
 from app.core.file_upload import save_upload_file
 
@@ -59,13 +59,8 @@ async def update_user_by_id(
     user_id: UUID,
     data: UpdateUserRequest,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     user = await user_service.update_user_by_id(db, user_id, data)
     return UserWithProfileResponse.model_validate(user)
 
@@ -75,19 +70,13 @@ async def update_user_by_id(
 @router.get(
     "/",
     response_model=list[UserWithProfileResponse],
-    dependencies=[Depends(get_current_user)],  # swap for is_superuser guard below
 )
 async def get_all_users(
     db: async_session,
-    current_user: User = Depends(get_current_user),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     users = await user_service.get_all_users(db, skip=skip, limit=limit)
     return [UserWithProfileResponse.model_validate(u) for u in users]
 
@@ -98,13 +87,8 @@ async def get_all_users(
 async def get_user_by_id(
     user_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     user = await user_service.get_user_by_id(db, user_id)
     return UserWithProfileResponse.model_validate(user)
 
@@ -115,13 +99,8 @@ async def get_user_by_id(
 async def delete_user(
     user_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     await user_service.delete_user(db, user_id)
 
 
@@ -140,15 +119,7 @@ async def upload_avatar(
     current_user: User = Depends(get_current_user),
 ):
     _, _, url = await save_upload_file(file)
-    await user_service.update_me(
+    user = await user_service.update_me(
         db, current_user.id, UpdateUserRequest(avatar_url=url)
     )
-
-    # Re-fetch with profile eagerly loaded
-    result = await db.execute(
-        select(User)
-        .where(User.id == current_user.id)
-        .options(selectinload(User.profile))
-    )
-    user = result.scalar_one()
     return UserWithProfileResponse.model_validate(user)

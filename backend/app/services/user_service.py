@@ -26,25 +26,19 @@ class UserService:
                 detail="Email already registered",
             )
 
-        user = User(
-            full_name=data.full_name,
-            email=data.email,
-            hashed_password=hash_password(data.password),
-        )
-        await user_crud.create(db, user)
+        user = await user_crud.create(db, obj_in={
+            "full_name": data.full_name,
+            "email": data.email,
+            "hashed_password": hash_password(data.password),
+        })
 
         cart = Cart(user_id=user.id, total_amount=0)
         db.add(cart)
 
         await db.commit()
 
-        # Re-fetch with profile eagerly loaded to avoid MissingGreenlet on serialization
-        result = await db.execute(
-            select(User)
-            .where(User.id == user.id)
-            .options(selectinload(User.profile))
-        )
-        return result.scalar_one()
+        # Re-fetch with profile eagerly loaded
+        return await user_crud.get_by_id(db, user.id)
 
     # ── Complete profile ──────────────────────────────────────────────────────
 
@@ -66,16 +60,11 @@ class UserService:
             profile = CustomerProfile(user_id=user_id, **data.model_dump())
             db.add(profile)
 
-        await user_crud.update(db, user, {"is_profile_complete": True})
+        await user_crud.update(db, db_obj=user, obj_in={"is_profile_complete": True})
         await db.commit()
 
         # Re-fetch with profile eagerly loaded
-        result = await db.execute(
-            select(User)
-            .where(User.id == user_id)
-            .options(selectinload(User.profile))
-        )
-        return result.scalar_one()
+        return await user_crud.get_by_id(db, user_id)
 
     # ── Get current user ──────────────────────────────────────────────────────
 
@@ -116,24 +105,19 @@ class UserService:
             profile_fields["address"] = data.address
 
         if user_fields:
-            await user_crud.update(db, user, user_fields)
+            await user_crud.update(db, db_obj=user, obj_in=user_fields)
         if profile_fields:
             await user_crud.update_profile(db, user_id, profile_fields)
 
         await db.commit()
-        result = await db.execute(
-            select(User)
-            .where(User.id == user.id)
-            .options(selectinload(User.profile))
-        )
-        return result.scalar_one()
+        return await user_crud.get_by_id(db, user_id)
 
     # ── Admin: get all users ──────────────────────────────────────────────────
 
     async def get_all_users(
         self, db: AsyncSession, skip: int = 0, limit: int = 20
     ) -> list[User]:
-        return await user_crud.get_all(db, skip=skip, limit=limit)
+        return await user_crud.get_all_paginated(db, skip=skip, limit=limit)
 
     # ── Admin: get user by id ─────────────────────────────────────────────────
 
@@ -155,7 +139,7 @@ class UserService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
-        await user_crud.delete(db, user)
+        await user_crud.delete(db, db_obj=user)
         await db.commit()
 
     # ── Admin: update user by id ───────────────────────────────────────────────
@@ -186,27 +170,25 @@ class UserService:
             profile_fields["address"] = data.address
 
         if user_fields:
-            await user_crud.update(db, user, user_fields)
+            await user_crud.update(db, db_obj=user, obj_in=user_fields)
         if profile_fields:
             await user_crud.update_profile(db, user_id, profile_fields)
 
         await db.commit()
-        await db.refresh(user)
-        return user
+        return await user_crud.get_by_id(db, user_id)
 
     async def google_login(self, db: AsyncSession, email: str, full_name: str, avatar_url: Optional[str]) -> User:
         user = await user_crud.get_by_email(db, email)
 
         if not user:
             # Auto-register new user from Google
-            user = User(
-                full_name=full_name,
-                email=email,
-                hashed_password=hash_password(secrets.token_urlsafe(32)),  # random unusable password
-                is_active=True,
-                is_profile_complete=False,
-            )
-            await user_crud.create(db, user)
+            user = await user_crud.create(db, obj_in={
+                "full_name": full_name,
+                "email": email,
+                "hashed_password": hash_password(secrets.token_urlsafe(32)),  # random unusable password
+                "is_active": True,
+                "is_profile_complete": False,
+            })
 
             # Auto-create cart
             from app.models.cart import Cart
@@ -221,14 +203,7 @@ class UserService:
             await db.commit()
 
         # Re-fetch with profile eagerly loaded
-        from sqlalchemy.orm import selectinload
-        from sqlalchemy import select
-        result = await db.execute(
-            select(User)
-            .where(User.id == user.id)
-            .options(selectinload(User.profile))
-        )
-        return result.scalar_one()
+        return await user_crud.get_by_id(db, user.id)
     
     async def change_password(
         self, db: AsyncSession, user_id: UUID, data: ChangePasswordRequest
@@ -252,7 +227,7 @@ class UserService:
                 detail="New password must be different from current password",
             )
 
-        await user_crud.update(db, user, {"hashed_password": hash_password(data.new_password)})
+        await user_crud.update(db, db_obj=user, obj_in={"hashed_password": hash_password(data.new_password)})
         await db.commit()
 
 
