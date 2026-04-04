@@ -60,3 +60,15 @@ async def get_current_active_profile(
             detail="Please complete your profile first",
         )
     return current_user
+
+
+async def get_current_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Use this dependency on routes that require admin access."""
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user

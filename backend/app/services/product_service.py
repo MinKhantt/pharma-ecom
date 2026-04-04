@@ -23,7 +23,7 @@ class CategoryService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Category name already exists",
             )
-        category = await category_crud.create(db, data.model_dump())
+        category = await category_crud.create(db, obj_in=data.model_dump())
         await db.commit()
         await db.refresh(category)
         return category
@@ -32,10 +32,10 @@ class CategoryService:
         self, 
         db: AsyncSession,
     ) -> list[Category]:
-        return await category_crud.get_all(db)
+        return await category_crud.get_all_ordered(db)
 
     async def get_by_id(self, db: AsyncSession, category_id: UUID) -> Category:
-        category = await category_crud.get_by_id(db, category_id)
+        category = await category_crud.get(db, category_id)
         if not category:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -46,7 +46,7 @@ class CategoryService:
     async def update(
         self, db: AsyncSession, category_id: UUID, data: CategoryUpdate
     ) -> Category:
-        category = await category_crud.get_by_id(db, category_id)
+        category = await category_crud.get(db, category_id)
         if not category:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -59,19 +59,19 @@ class CategoryService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Category name already exists",
                 )
-        await category_crud.update(db, category, data.model_dump(exclude_none=True))
+        await category_crud.update(db, db_obj=category, obj_in=data.model_dump(exclude_none=True))
         await db.commit()
         await db.refresh(category)
         return category
 
     async def delete(self, db: AsyncSession, category_id: UUID) -> None:
-        category = await category_crud.get_by_id(db, category_id)
+        category = await category_crud.get(db, category_id)
         if not category:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Category not found",
             )
-        await category_crud.delete(db, category)
+        await category_crud.delete(db, db_obj=category)
         await db.commit()
 
 
@@ -79,13 +79,13 @@ class ProductService:
 
     async def create(self, db: AsyncSession, data: ProductCreate) -> Product:
         # Verify category exists
-        category = await category_crud.get_by_id(db, data.category_id)
+        category = await category_crud.get(db, data.category_id)
         if not category:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Category not found",
             )
-        product = await product_crud.create(db, data.model_dump())
+        product = await product_crud.create(db, obj_in=data.model_dump())
         await db.commit()
         product = await product_crud.get_by_id(db, product.id)
         return product
@@ -99,7 +99,7 @@ class ProductService:
         requires_prescription: Optional[bool] = None,
         search: Optional[str] = None,
     ) -> tuple[list[Product], int]:
-        return await product_crud.get_all(
+        return await product_crud.get_all_paginated(
             db,
             skip=skip,
             limit=limit,
@@ -120,31 +120,31 @@ class ProductService:
     async def update(
         self, db: AsyncSession, product_id: UUID, data: ProductUpdate
     ) -> Product:
-        product = await product_crud.get_by_id(db, product_id)
+        product = await product_crud.get(db, product_id)
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found",
             )
         if data.category_id:
-            category = await category_crud.get_by_id(db, data.category_id)
+            category = await category_crud.get(db, data.category_id)
             if not category:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Category not found",
                 )
-        await product_crud.update(db, product, data.model_dump(exclude_none=True))
+        await product_crud.update(db, db_obj=product, obj_in=data.model_dump(exclude_none=True))
         await db.commit()
         return await product_crud.get_by_id(db, product_id)
 
     async def delete(self, db: AsyncSession, product_id: UUID) -> None:
-        product = await product_crud.get_by_id(db, product_id)
+        product = await product_crud.get(db, product_id)
         if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found",
             )
-        await product_crud.delete(db, product)
+        await product_crud.delete(db, db_obj=product)
         await db.commit()
 
     async def add_image(

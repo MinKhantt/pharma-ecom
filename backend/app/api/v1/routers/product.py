@@ -13,9 +13,8 @@ from app.schemas.product import (
     ProductListResponse,
 )
 from app.services.product_service import category_service, product_service
-from app.api.v1.dependencies import get_current_user
+from app.api.v1.dependencies import get_current_user, get_current_admin
 from app.models.user import User
-from fastapi import HTTPException
 
 router = APIRouter(tags=["products"])
 
@@ -26,10 +25,8 @@ router = APIRouter(tags=["products"])
 async def create_category(
     data: CategoryCreate,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return await category_service.create(db, data)
 
 
@@ -48,10 +45,8 @@ async def update_category(
     category_id: UUID,
     data: CategoryUpdate,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return await category_service.update(db, category_id, data)
 
 
@@ -59,10 +54,8 @@ async def update_category(
 async def delete_category(
     category_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     await category_service.delete(db, category_id)
 
 
@@ -72,10 +65,8 @@ async def delete_category(
 async def create_product(
     data: ProductCreate,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return await product_service.create(db, data)
 
 
@@ -109,10 +100,8 @@ async def update_product(
     product_id: UUID,
     data: ProductUpdate,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return await product_service.update(db, product_id, data)
 
 
@@ -120,10 +109,8 @@ async def update_product(
 async def delete_product(
     product_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     await product_service.delete(db, product_id)
 
 
@@ -139,13 +126,8 @@ async def add_product_image(
     db: async_session,
     file: UploadFile = File(...),
     is_primary: bool = Form(default=False),
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     return await product_service.add_image(db, product_id, file, is_primary)
 
 
@@ -157,11 +139,6 @@ async def delete_product_image(
     product_id: UUID,
     image_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     await product_service.delete_image(db, product_id, image_id)
