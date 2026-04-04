@@ -2,13 +2,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List
 
 from app.models.cart import Cart, CartItem
 from app.models.product import Product
+from app.crud.base import CRUDBase
 
 
-class CartCRUD:
+class CartCRUD(CRUDBase[Cart]):
 
     def _base_query(self):
         return (
@@ -25,6 +26,9 @@ class CartCRUD:
         )
         return result.scalar_one_or_none()
 
+
+class CartItemCRUD(CRUDBase[CartItem]):
+
     async def get_item(
         self, db: AsyncSession, cart_id: UUID, product_id: UUID
     ) -> Optional[CartItem]:
@@ -36,41 +40,14 @@ class CartCRUD:
         )
         return result.scalar_one_or_none()
 
-    async def get_item_by_id(
-        self, db: AsyncSession, item_id: UUID
-    ) -> Optional[CartItem]:
+    async def get_items_by_cart_id(
+        self, db: AsyncSession, cart_id: UUID
+    ) -> List[CartItem]:
         result = await db.execute(
-            select(CartItem).where(CartItem.id == item_id)
+            select(CartItem).where(CartItem.cart_id == cart_id)
         )
-        return result.scalar_one_or_none()
-
-    async def add_item(self, db: AsyncSession, data: dict) -> CartItem:
-        item = CartItem(**data)
-        db.add(item)
-        await db.flush()
-        return item
-
-    async def update_item(
-        self, db: AsyncSession, item: CartItem, data: dict
-    ) -> CartItem:
-        for field, value in data.items():
-            setattr(item, field, value)
-        await db.flush()
-        return item
-
-    async def delete_item(self, db: AsyncSession, item: CartItem) -> None:
-        await db.delete(item)
-        await db.flush()
-
-    async def clear(self, db: AsyncSession, cart: Cart) -> None:
-        for item in cart.items:
-            await db.delete(item)
-        await db.flush()
-
-    async def update_total(self, db: AsyncSession, cart: Cart) -> Cart:
-        cart.recalculate_total()
-        await db.flush()
-        return cart
+        return result.scalars().all()
 
 
-cart_crud = CartCRUD()
+cart_crud = CartCRUD(Cart)
+cart_item_crud = CartItemCRUD(CartItem)
