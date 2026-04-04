@@ -9,7 +9,7 @@ from app.schemas.article import (
     ArticleResponse, ArticleListResponse,
 )
 from app.services.article_service import article_service
-from app.api.v1.dependencies import get_current_user
+from app.api.v1.dependencies import get_current_user, get_current_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/articles", tags=["articles"])
@@ -43,10 +43,8 @@ async def admin_get_articles(
     category: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     articles, total = await article_service.get_all_admin(
         db, category=category, skip=skip, limit=limit
     )
@@ -57,11 +55,9 @@ async def admin_get_articles(
 async def create_article(
     data: ArticleCreate,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return await article_service.create(db, current_user.id, data)
+    return await article_service.create(db, admin.id, data)
 
 
 @router.post("/{article_id}/cover", response_model=ArticleResponse)
@@ -69,10 +65,8 @@ async def upload_cover(
     article_id: UUID,
     db: async_session,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     return await article_service.upload_cover(db, article_id, file)
 
 
@@ -81,10 +75,8 @@ async def update_article(
     article_id: UUID,
     data: ArticleUpdate,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     return await article_service.update(db, article_id, data)
 
 
@@ -92,8 +84,6 @@ async def update_article(
 async def delete_article(
     article_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     await article_service.delete(db, article_id)

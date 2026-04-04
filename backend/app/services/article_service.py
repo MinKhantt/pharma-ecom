@@ -40,7 +40,7 @@ class ArticleService:
         slug = await unique_slug(db, data.title)
         published_at = datetime.now(timezone.utc) if data.is_published else None
 
-        article = await article_crud.create(db, {
+        article = await article_crud.create(db, obj_in={
             "title":        data.title,
             "slug":         slug,
             "content":      data.content,
@@ -64,7 +64,7 @@ class ArticleService:
             raise HTTPException(status_code=404, detail="Article not found")
 
         _, _, url = await save_upload_file(file)
-        await article_crud.update(db, article, {"cover_image_url": url})
+        await article_crud.update(db, db_obj=article, obj_in={"cover_image_url": url})
         await db.commit()
         return await article_crud.get_by_id(db, article_id)
 
@@ -75,7 +75,7 @@ class ArticleService:
         skip: int = 0,
         limit: int = 10,
     ) -> tuple[list[Article], int]:
-        return await article_crud.get_all(
+        return await article_crud.get_all_paginated(
             db, published_only=True, category=category, skip=skip, limit=limit
         )
 
@@ -92,7 +92,7 @@ class ArticleService:
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[list[Article], int]:
-        return await article_crud.get_all(
+        return await article_crud.get_all_paginated(
             db, published_only=False, category=category, skip=skip, limit=limit
         )
 
@@ -114,7 +114,7 @@ class ArticleService:
             elif not update_data["is_published"]:
                 update_data["published_at"] = None
 
-        await article_crud.update(db, article, update_data)
+        await article_crud.update(db, db_obj=article, obj_in=update_data)
         await db.commit()
         return await article_crud.get_by_id(db, article_id)
 
@@ -122,7 +122,7 @@ class ArticleService:
         article = await article_crud.get_by_id(db, article_id)
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
-        await article_crud.delete(db, article)
+        await article_crud.delete(db, db_obj=article)
         await db.commit()
 
 
