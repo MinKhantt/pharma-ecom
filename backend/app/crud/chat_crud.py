@@ -1,14 +1,15 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update, func
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List
 
 from app.models.chat import Conversation, ConversationMember, Message
 from app.models.user import User
+from app.crud.base import CRUDBase
 
 
-class ChatCRUD:
+class ConversationCRUD(CRUDBase[Conversation]):
 
     def _full_query(self):
         return (
@@ -29,14 +30,6 @@ class ChatCRUD:
             )
         )
 
-    async def create_conversation(
-        self, db: AsyncSession, created_by: UUID
-    ) -> Conversation:
-        conversation = Conversation(created_by=created_by)
-        db.add(conversation)
-        await db.flush()
-        return conversation
-
     async def get_by_id(
         self, db: AsyncSession, conversation_id: UUID
     ) -> Optional[Conversation]:
@@ -47,7 +40,7 @@ class ChatCRUD:
 
     async def get_user_conversations(
         self, db: AsyncSession, user_id: UUID
-    ) -> list[Conversation]:
+    ) -> List[Conversation]:
         result = await db.execute(
             self._summary_query()
             .join(ConversationMember)
@@ -71,21 +64,18 @@ class ChatCRUD:
                 return conv
         return None
 
-    async def add_member(
-        self,
-        db: AsyncSession,
-        conversation_id: UUID,
-        user_id: UUID,
-        role: str = "customer",
-    ) -> ConversationMember:
-        member = ConversationMember(
-            conversation_id=conversation_id,
-            user_id=user_id,
-            role=role,
+    async def touch_conversation(
+        self, db: AsyncSession, conversation_id: UUID
+    ) -> None:
+        await db.execute(
+            update(Conversation)
+            .where(Conversation.id == conversation_id)
+            .values(updated_at=func.now())
         )
-        db.add(member)
         await db.flush()
-        return member
+
+
+class ConversationMemberCRUD(CRUDBase[ConversationMember]):
 
     async def get_member(
         self, db: AsyncSession, conversation_id: UUID, user_id: UUID
@@ -100,21 +90,8 @@ class ChatCRUD:
         )
         return result.scalar_one_or_none()
 
-    async def create_message(
-        self,
-        db: AsyncSession,
-        conversation_id: UUID,
-        sender_id: UUID,
-        content: str,
-    ) -> Message:
-        message = Message(
-            conversation_id=conversation_id,
-            sender_id=sender_id,
-            content=content,
-        )
-        db.add(message)
-        await db.flush()
-        return message
+
+class MessageCRUD(CRUDBase[Message]):
 
     async def get_messages(
         self,
@@ -122,7 +99,7 @@ class ChatCRUD:
         conversation_id: UUID,
         skip: int = 0,
         limit: int = 50,
-    ) -> list[Message]:
+    ) -> List[Message]:
         result = await db.execute(
             select(Message)
             .where(Message.conversation_id == conversation_id)
@@ -148,14 +125,7 @@ class ChatCRUD:
         )
         await db.flush()
 
-    async def touch_conversation(
-        self, db: AsyncSession, conversation_id: UUID
-    ) -> None:
-        await db.execute(
-            update(Conversation)
-            .where(Conversation.id == conversation_id)
-            .values(updated_at=func.now())
-        )
-        await db.flush()
 
-chat_crud = ChatCRUD()
+conversation_crud = ConversationCRUD(Conversation)
+conversation_member_crud = ConversationMemberCRUD(ConversationMember)
+message_crud = MessageCRUD(Message)

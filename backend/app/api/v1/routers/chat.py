@@ -11,7 +11,7 @@ from app.schemas.chat import (
     MessageResponse,
 )
 from app.services.chat_service import chat_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile
+from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
 from app.core.websocket_manager import manager
 from app.core.ws_auth import get_ws_user
 from app.models.user import User
@@ -60,8 +60,8 @@ async def customer_websocket(websocket: WebSocket, conversation_id: UUID):
         user = await get_ws_user(websocket, db)
 
         # Verify user is a member of this conversation
-        from app.crud.chat_crud import chat_crud
-        member = await chat_crud.get_member(db, conversation_id, user.id)
+        from app.crud.chat_crud import conversation_member_crud
+        member = await conversation_member_crud.get_member(db, conversation_id, user.id)
         if not member:
             await websocket.close(code=http_status.WS_1008_POLICY_VIOLATION)
             return
@@ -159,13 +159,8 @@ async def mark_read(
 @router.get("/admin/conversations", response_model=list[ConversationSummaryResponse])
 async def admin_get_conversations(
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     return await chat_service.get_my_conversations(db, current_user.id)
 
 
@@ -176,13 +171,8 @@ async def admin_get_conversations(
 async def admin_get_conversation(
     conversation_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     return await chat_service.get_conversation(
         db, current_user.id, conversation_id
     )
@@ -196,13 +186,8 @@ async def admin_reply(
     conversation_id: UUID,
     data: SendMessageRequest,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     return await chat_service.send_message(
         db, current_user.id, conversation_id, data, sender_is_admin=True
     )
@@ -215,11 +200,6 @@ async def admin_reply(
 async def admin_mark_read(
     conversation_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     await chat_service.mark_read(db, current_user.id, conversation_id)
