@@ -5,7 +5,7 @@ from sqlalchemy import select, func, extract
 from datetime import datetime, timezone, timedelta
 
 from app.db.database import async_session
-from app.api.v1.dependencies import get_current_user
+from app.api.v1.dependencies import get_current_user, get_current_admin
 from app.models.user import User
 from app.models.order import Order, OrderStatus
 from app.models.payment import Payment, PaymentStatus
@@ -31,14 +31,8 @@ class ChartData(BaseModel):
 @router.get("/stats", response_model=DashboardStats)
 async def get_dashboard_stats(
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
-
     orders_result = await db.execute(select(func.count()).select_from(Order))
     total_orders = orders_result.scalar() or 0
 
@@ -67,14 +61,8 @@ async def get_dashboard_stats(
 @router.get("/charts", response_model=ChartData)
 async def get_chart_data(
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
-
     today = datetime.now(timezone.utc).date()
 
     # Orders by status
