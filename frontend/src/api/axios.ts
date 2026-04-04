@@ -36,7 +36,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthRoute =
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/register");
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthRoute
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -62,10 +70,15 @@ api.interceptors.response.use(
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refresh_token: refreshToken,
         });
+
         const { access_token, refresh_token } = response.data;
+
         useAuthStore.getState().setTokens(access_token, refresh_token);
+
         processQueue(null, access_token);
+
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
+
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
