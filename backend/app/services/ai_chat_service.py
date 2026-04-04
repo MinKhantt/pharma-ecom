@@ -179,8 +179,8 @@ class AIChatService:
         reply = response.choices[0].message.content
 
         # 5. Save both messages to DB
-        await ai_chat_crud.save_message(db, user_id, "user", message)
-        await ai_chat_crud.save_message(db, user_id, "assistant", reply)
+        await ai_chat_crud.create(db, obj_in={"user_id": user_id, "role": "user", "content": message})
+        await ai_chat_crud.create(db, obj_in={"user_id": user_id, "role": "assistant", "content": reply})
         await db.commit()
 
         # 6. Return reply + updated history
