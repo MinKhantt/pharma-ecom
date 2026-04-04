@@ -43,7 +43,7 @@ async def create_admin(data: CreateAdminRequest, db: async_session):
         password=data.password,
     ))
 
-    await user_crud.update(db, user, {
+    await user_crud.update(db, db_obj=user, obj_in={
         "is_superuser": True,
         "is_profile_complete": True,
     })
