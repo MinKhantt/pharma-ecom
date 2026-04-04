@@ -5,7 +5,7 @@ from uuid import UUID
 from app.db.database import async_session
 from app.schemas.review import ReviewCreate, ReviewResponse, ReviewListResponse
 from app.services.review_service import review_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile
+from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -49,10 +49,8 @@ async def get_all_reviews(
     db: async_session,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     reviews, total = await review_service.get_all_reviews(db, skip=skip, limit=limit)
     return ReviewListResponse(items=reviews, total=total)
 
@@ -61,10 +59,8 @@ async def get_all_reviews(
 async def approve_review(
     review_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     return await review_service.approve_review(db, review_id)
 
 
@@ -72,8 +68,6 @@ async def approve_review(
 async def delete_review(
     review_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     await review_service.delete_review(db, review_id)

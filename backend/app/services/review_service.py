@@ -40,7 +40,7 @@ class ReviewService:
                 detail="You have already submitted a review",
             )
 
-        review = await review_crud.create(db, {
+        review = await review_crud.create(db, obj_in={
             "user_id": user_id,
             "rating":  data.rating,
             "comment": data.comment,
@@ -57,14 +57,14 @@ class ReviewService:
     async def get_public_reviews(
         self, db: AsyncSession, skip: int = 0, limit: int = 20
     ) -> tuple[list[ShopReview], int]:
-        return await review_crud.get_all(db, approved_only=True, skip=skip, limit=limit)
+        return await review_crud.get_all_paginated(db, approved_only=True, skip=skip, limit=limit)
 
     # ── Admin ────────────────────────────────────────────────────────────────
 
     async def get_all_reviews(
         self, db: AsyncSession, skip: int = 0, limit: int = 20
     ) -> tuple[list[ShopReview], int]:
-        return await review_crud.get_all(db, approved_only=False, skip=skip, limit=limit)
+        return await review_crud.get_all_paginated(db, approved_only=False, skip=skip, limit=limit)
 
     async def approve_review(
         self, db: AsyncSession, review_id: UUID
@@ -72,7 +72,7 @@ class ReviewService:
         review = await review_crud.get_by_id(db, review_id)
         if not review:
             raise HTTPException(status_code=404, detail="Review not found")
-        await review_crud.update(db, review, {"is_approved": True})
+        await review_crud.update(db, db_obj=review, obj_in={"is_approved": True})
         await db.commit()
         return await review_crud.get_by_id(db, review_id)
 
@@ -82,7 +82,7 @@ class ReviewService:
         review = await review_crud.get_by_id(db, review_id)
         if not review:
             raise HTTPException(status_code=404, detail="Review not found")
-        await review_crud.delete(db, review)
+        await review_crud.delete(db, db_obj=review)
         await db.commit()
 
 

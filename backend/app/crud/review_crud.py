@@ -2,28 +2,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List, Tuple
 from app.models.review import ShopReview
 from app.models.user import User
-from app.models.customer import CustomerProfile
+from app.crud.base import CRUDBase
 
 
-class ReviewCRUD:
+class ReviewCRUD(CRUDBase[ShopReview]):
 
     def _base_query(self):
         return (
             select(ShopReview)
-            .join(ShopReview.user)
             .options(
                 joinedload(ShopReview.user).joinedload(User.profile)
             )
         )
-
-    async def create(self, db: AsyncSession, data: dict) -> ShopReview:
-        review = ShopReview(**data)
-        db.add(review)
-        await db.flush()
-        return review
 
     async def get_by_id(
         self, db: AsyncSession, review_id: UUID
@@ -41,13 +34,13 @@ class ReviewCRUD:
         )
         return result.scalar_one_or_none()
 
-    async def get_all(
+    async def get_all_paginated(
         self,
         db: AsyncSession,
         approved_only: bool = True,
         skip: int = 0,
         limit: int = 20,
-    ) -> tuple[list[ShopReview], int]:
+    ) -> Tuple[List[ShopReview], int]:
         query = self._base_query()
         count_query = select(func.count()).select_from(ShopReview)
 
@@ -62,17 +55,5 @@ class ReviewCRUD:
         result = await db.execute(query)
         return result.scalars().all(), total
 
-    async def update(
-        self, db: AsyncSession, review: ShopReview, data: dict
-    ) -> ShopReview:
-        for k, v in data.items():
-            setattr(review, k, v)
-        await db.flush()
-        return review
 
-    async def delete(self, db: AsyncSession, review: ShopReview) -> None:
-        await db.delete(review)
-        await db.flush()
-
-
-review_crud = ReviewCRUD()
+review_crud = ReviewCRUD(ShopReview)
