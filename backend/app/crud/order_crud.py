@@ -2,14 +2,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload, selectinload
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List, Tuple
 
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.product import Product
 from app.models.user import User
+from app.crud.base import CRUDBase
 
 
-class OrderCRUD:
+class OrderCRUD(CRUDBase[Order]):
 
     def _base_query(self):
         return (
@@ -26,12 +27,6 @@ class OrderCRUD:
             )
         )
 
-    async def create(self, db: AsyncSession, data: dict) -> Order:
-        order = Order(**data)
-        db.add(order)
-        await db.flush()
-        return order
-
     async def add_items(self, db: AsyncSession, items: list[dict]) -> None:
         for item_data in items:
             item = OrderItem(**item_data)
@@ -44,14 +39,14 @@ class OrderCRUD:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_user(
+    async def get_by_user_paginated(
         self,
         db: AsyncSession,
         user_id: UUID,
         skip: int = 0,
         limit: int = 20,
         status: Optional[OrderStatus] = None,
-    ) -> tuple[list[Order], int]:
+    ) -> Tuple[List[Order], int]:
         query = self._base_query().where(Order.user_id == user_id)
         count_query = select(func.count()).select_from(Order).where(Order.user_id == user_id)
 
@@ -66,13 +61,13 @@ class OrderCRUD:
         result = await db.execute(query)
         return result.scalars().all(), total
 
-    async def get_all(
+    async def get_all_paginated(
         self,
         db: AsyncSession,
         skip: int = 0,
         limit: int = 20,
         status: Optional[OrderStatus] = None,
-    ) -> tuple[list[Order], int]:
+    ) -> Tuple[List[Order], int]:
         query = self._base_query()
         count_query = select(func.count()).select_from(Order)
 
@@ -87,11 +82,5 @@ class OrderCRUD:
         result = await db.execute(query)
         return result.scalars().all(), total
 
-    async def update(self, db: AsyncSession, order: Order, data: dict) -> Order:
-        for field, value in data.items():
-            setattr(order, field, value)
-        await db.flush()
-        return order
 
-
-order_crud = OrderCRUD()
+order_crud = OrderCRUD(Order)

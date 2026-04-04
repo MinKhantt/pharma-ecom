@@ -45,7 +45,7 @@ class OrderService:
             else OrderStatus.PENDING
         )
 
-        order = await order_crud.create(db, {
+        order = await order_crud.create(db, obj_in={
             "user_id": user_id,
             "total_amount": cart.total_amount,
             "status": order_status,
@@ -64,12 +64,17 @@ class OrderService:
             # Deduct inventory
             product = await product_crud.get_by_id(db, item.product_id)
             await product_crud.update(
-                db, product, {"inventory": product.inventory - item.quantity}
+                db, db_obj=product, obj_in={"inventory": product.inventory - item.quantity}
             )
 
         # Clear cart after checkout
-        await cart_crud.clear(db, cart)
-        await cart_crud.update_total(db, cart)
+        from app.crud.cart_crud import cart_item_crud
+        items = await cart_item_crud.get_items_by_cart_id(db, cart.id)
+        for item in items:
+            await cart_item_crud.delete(db, db_obj=item)
+
+        from app.services.cart_service import cart_service
+        await cart_service._recalculate_and_save(db, cart)
 
         await db.commit()
         return await order_crud.get_by_id(db, order.id)
@@ -94,7 +99,7 @@ class OrderService:
             )
 
         file_name, file_type, url = await save_prescription(file)
-        await order_crud.update(db, order, {
+        await order_crud.update(db, db_obj=order, obj_in={
             "prescription_ref": url,
             "status": OrderStatus.PENDING,
         })
@@ -109,7 +114,7 @@ class OrderService:
         limit: int = 20,
         status: Optional[OrderStatus] = None,
     ) -> tuple[list[Order], int]:
-        return await order_crud.get_by_user(
+        return await order_crud.get_by_user_paginated(
             db, user_id, skip=skip, limit=limit, status=status
         )
 
@@ -152,10 +157,10 @@ class OrderService:
             product = await product_crud.get_by_id(db, item.product_id)
             if product:
                 await product_crud.update(
-                    db, product, {"inventory": product.inventory + item.quantity}
+                    db, db_obj=product, obj_in={"inventory": product.inventory + item.quantity}
                 )
 
-        await order_crud.update(db, order, {"status": OrderStatus.CANCELLED})
+        await order_crud.update(db, db_obj=order, obj_in={"status": OrderStatus.CANCELLED})
         await db.commit()
         return await order_crud.get_by_id(db, order_id)
 
@@ -168,7 +173,7 @@ class OrderService:
         limit: int = 20,
         status: Optional[OrderStatus] = None,
     ) -> tuple[list[Order], int]:
-        return await order_crud.get_all(db, skip=skip, limit=limit, status=status)
+        return await order_crud.get_all_paginated(db, skip=skip, limit=limit, status=status)
 
     async def get_order_by_id(
         self, db: AsyncSession, order_id: UUID
@@ -193,7 +198,7 @@ class OrderService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Order not found",
             )
-        await order_crud.update(db, order, {"status": data.status})
+        await order_crud.update(db, db_obj=order, obj_in={"status": data.status})
         await db.commit()
         return await order_crud.get_by_id(db, order_id)
     
@@ -210,7 +215,7 @@ class OrderService:
                 status_code=400,
                 detail="Only delivered orders can be returned",
             )
-        await order_crud.update(db, order, {
+        await order_crud.update(db, db_obj=order, obj_in={
             "status": OrderStatus.RETURN_REQUESTED,
             "return_reason": data.reason.value,
             "return_note": data.note,
@@ -236,11 +241,11 @@ class OrderService:
         if approve:
             payment = await payment_crud.get_by_order_id(db, order_id)
             if payment:
-                await payment_crud.update(db, payment, {"status": PaymentStatus.REFUNDED})
-            await order_crud.update(db, order, {"status": OrderStatus.REFUNDED})
+                await payment_crud.update(db, db_obj=payment, obj_in={"status": PaymentStatus.REFUNDED})
+            await order_crud.update(db, db_obj=order, obj_in={"status": OrderStatus.REFUNDED})
         else:
             # Reject — revert to delivered
-            await order_crud.update(db, order, {"status": OrderStatus.DELIVERED})
+            await order_crud.update(db, db_obj=order, obj_in={"status": OrderStatus.DELIVERED})
 
         await db.commit()
         return await order_crud.get_by_id(db, order_id)

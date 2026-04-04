@@ -13,7 +13,7 @@ from app.schemas.order import (
 )
 from app.models.order import OrderStatus
 from app.services.order_service import order_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile
+from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -86,16 +86,11 @@ async def request_return(
 @router.get("", response_model=OrderListResponse)
 async def get_all_orders(
     db: async_session,
-    current_user: User = Depends(get_current_user),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     status: Optional[OrderStatus] = Query(default=None),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     orders, total = await order_service.get_all_orders(
         db, skip=skip, limit=limit, status=status
     )
@@ -106,13 +101,8 @@ async def get_all_orders(
 async def get_order(
     order_id: UUID,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     return await order_service.get_order_by_id(db, order_id)
 
 
@@ -121,13 +111,8 @@ async def update_order_status(
     order_id: UUID,
     data: UpdateOrderStatusRequest,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
     return await order_service.update_order_status(db, order_id, data)
 
 @router.patch("/{order_id}/return", response_model=OrderResponse)
@@ -135,8 +120,6 @@ async def handle_return(
     order_id: UUID,
     data: ApproveRejectReturnRequest,
     db: async_session,
-    current_user: User = Depends(get_current_user),
+    admin: User = Depends(get_current_admin),
 ):
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Admin access required")
     return await order_service.handle_return(db, order_id, data.approve)
