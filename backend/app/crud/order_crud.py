@@ -4,7 +4,8 @@ from sqlalchemy.orm import joinedload, selectinload
 from uuid import UUID
 from typing import Optional, List, Tuple
 
-from app.models.order import Order, OrderItem, OrderStatus
+from app.models.order import Order, OrderStatus
+from app.models.order_item import OrderItem
 from app.models.product import Product
 from app.models.user import User
 from app.crud.base import CRUDBase

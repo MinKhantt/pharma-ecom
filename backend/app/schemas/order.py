@@ -4,18 +4,10 @@ from pydantic import BaseModel, field_validator, model_validator
 from uuid import UUID
 from decimal import Decimal
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from app.models.order import OrderStatus
-from app.schemas.product import ProductResponse
+from .order_item import OrderItemResponse
 
-
-class OrderItemResponse(BaseModel):
-    id: UUID
-    quantity: int
-    price: Decimal
-    product: ProductResponse
-
-    model_config = {"from_attributes": True}
 
 class OrderUserResponse(BaseModel):
     id: UUID
@@ -63,13 +55,13 @@ class OrderResponse(BaseModel):
 
     user: Optional[OrderUserResponse] = None
 
-    items: list[OrderItemResponse] = []
+    items: List[OrderItemResponse] = []
 
     model_config = {"from_attributes": True}
 
 
 class OrderListResponse(BaseModel):
-    items: list[OrderResponse]
+    items: List[OrderResponse]
     total: int
     skip: int
     limit: int

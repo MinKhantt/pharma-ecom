@@ -5,10 +5,12 @@ from typing import Optional
 
 from app.crud.order_crud import order_crud
 from app.crud.cart_crud import cart_crud
+from app.crud.cart_item_crud import cart_item_crud
 from app.crud.product_crud import product_crud
 from app.models.order import Order, OrderStatus
 from app.schemas.order import CheckoutRequest, UpdateOrderStatusRequest, RequestReturnRequest
 from app.core.file_upload import save_prescription
+from app.services.cart_service import cart_service
 
 
 class OrderService:
@@ -68,12 +70,10 @@ class OrderService:
             )
 
         # Clear cart after checkout
-        from app.crud.cart_crud import cart_item_crud
         items = await cart_item_crud.get_items_by_cart_id(db, cart.id)
         for item in items:
             await cart_item_crud.delete(db, db_obj=item)
 
-        from app.services.cart_service import cart_service
         await cart_service._recalculate_and_save(db, cart)
 
         await db.commit()

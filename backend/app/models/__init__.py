@@ -3,8 +3,10 @@ from .user import User
 from .product import Product
 from .category import Category
 from .product_image import ProductImage
-from .cart import Cart, CartItem
-from .order import Order, OrderItem, OrderStatus
+from .cart import Cart
+from .cart_item import CartItem
+from .order import Order, OrderStatus
+from .order_item import OrderItem
 from .payment import Payment, PaymentMethod, PaymentStatus
 from .chat import Conversation, ConversationMember, Message
 from .customer import CustomerProfile

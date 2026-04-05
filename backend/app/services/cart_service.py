@@ -3,9 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from uuid import UUID
 
-from app.crud.cart_crud import cart_crud, cart_item_crud
+from app.crud.cart_crud import cart_crud
+from app.crud.cart_item_crud import cart_item_crud
 from app.crud.product_crud import product_crud
-from app.schemas.cart import CartItemAdd, CartItemUpdate
+from app.schemas.cart_item import CartItemAdd, CartItemUpdate
 from app.models.cart import Cart
 
 
@@ -16,12 +17,18 @@ class CartService:
         Re-fetch all cart items and recalculate total_amount correctly.
         Updates the cart object in the session without triggering full cascades.
         """
+        # Use a fresh query to get current items from DB
         all_items = await cart_item_crud.get_items_by_cart_id(db, cart.id)
 
         total = sum(
             (item.unit_price or Decimal(0)) * item.quantity
             for item in all_items
         )
+
+        # Update total directly on the object. 
+        # Since 'cart' is already in the session, this will be saved on commit.
+        # We avoid cart_crud.update() because it calls db.add(cart) which can 
+        # trigger "Instance has been deleted" errors if the session state is complex.
         cart.total_amount = total
         await db.flush()
 
