@@ -1,6 +1,8 @@
 from .base import Base
 from .user import User
-from .product import Product, Category, ProductImage
+from .product import Product
+from .category import Category
+from .product_image import ProductImage
 from .cart import Cart, CartItem
 from .order import Order, OrderItem, OrderStatus
 from .payment import Payment, PaymentMethod, PaymentStatus

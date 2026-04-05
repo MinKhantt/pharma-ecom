@@ -4,21 +4,9 @@ from sqlalchemy.orm import selectinload
 from uuid import UUID
 from typing import Optional, List, Tuple
 
-from app.models.product import Product, Category, ProductImage
+from app.models.product import Product
+from app.models.product_image import ProductImage
 from app.crud.base import CRUDBase
-
-
-class CategoryCRUD(CRUDBase[Category]):
-
-    async def get_by_name(self, db: AsyncSession, name: str) -> Optional[Category]:
-        result = await db.execute(
-            select(Category).where(Category.name == name)
-        )
-        return result.scalar_one_or_none()
-
-    async def get_all_ordered(self, db: AsyncSession) -> List[Category]:
-        result = await db.execute(select(Category).order_by(Category.name))
-        return result.scalars().all()
 
 
 class ProductCRUD(CRUDBase[Product]):
@@ -100,5 +88,4 @@ class ProductCRUD(CRUDBase[Product]):
         return result.scalar_one_or_none()
 
 
-category_crud = CategoryCRUD(Category)
 product_crud = ProductCRUD(Product)

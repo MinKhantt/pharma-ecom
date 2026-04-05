@@ -4,7 +4,10 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from app.core.config import settings
-from app.api.v1.routers import auth, user, product, cart, order, payment, chat, ai_chat, dashboard, review, article
+from app.api.v1.routers import (
+    auth, user, product, category, cart, order, 
+    payment, chat, ai_chat, dashboard, review, article
+)
 
 app = FastAPI(
     title="Pharmacy Shop API",
@@ -42,6 +45,7 @@ api_prefix_v1 = f"{settings.API_PREFIX}{settings.API_V1}"
 app.include_router(auth.router, prefix=api_prefix_v1)
 app.include_router(user.router, prefix=api_prefix_v1)
 app.include_router(product.router, prefix=api_prefix_v1)
+app.include_router(category.router, prefix=api_prefix_v1)
 app.include_router(cart.router, prefix=api_prefix_v1)
 app.include_router(order.router, prefix=api_prefix_v1)
 app.include_router(payment.router, prefix=api_prefix_v1)

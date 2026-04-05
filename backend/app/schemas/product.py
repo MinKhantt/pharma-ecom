@@ -4,47 +4,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
+from .category import CategoryResponse
+from .product_image import ProductImageResponse
 
-# ── Category ──────────────────────────────────────────────────────────────────
-
-class CategoryCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-
-    @field_validator("name")
-    @classmethod
-    def name_not_empty(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("name cannot be empty")
-        return v.strip()
-
-
-class CategoryUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-
-
-class CategoryResponse(BaseModel):
-    id: UUID
-    name: str
-    description: Optional[str]
-
-    model_config = {"from_attributes": True}
-
-
-# ── Product Image ─────────────────────────────────────────────────────────────
-
-class ProductImageResponse(BaseModel):
-    id: UUID
-    file_name: str
-    file_type: Optional[str]
-    url: str
-    is_primary: bool
-
-    model_config = {"from_attributes": True}
-
-
-# ── Product ───────────────────────────────────────────────────────────────────
 
 class ProductCreate(BaseModel):
     name: str

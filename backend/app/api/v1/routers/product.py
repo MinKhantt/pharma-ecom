@@ -4,64 +4,21 @@ from typing import Optional
 
 from app.db.database import async_session
 from app.schemas.product import (
-    CategoryCreate,
-    CategoryUpdate,
-    CategoryResponse,
     ProductCreate,
     ProductUpdate,
     ProductResponse,
     ProductListResponse,
 )
-from app.services.product_service import category_service, product_service
-from app.api.v1.dependencies import get_current_user, get_current_admin
+from app.services.product_service import product_service
+from app.api.v1.dependencies import get_current_admin
 from app.models.user import User
 
-router = APIRouter(tags=["products"])
-
-
-# ── Categories (admin only) ───────────────────────────────────────────────────
-
-@router.post("/categories", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
-async def create_category(
-    data: CategoryCreate,
-    db: async_session,
-    admin: User = Depends(get_current_admin),
-):
-    return await category_service.create(db, data)
-
-
-@router.get("/categories", response_model=list[CategoryResponse])
-async def get_all_categories(db: async_session):
-    return await category_service.get_all(db)
-
-
-@router.get("/categories/{category_id}", response_model=CategoryResponse)
-async def get_category(category_id: UUID, db: async_session):
-    return await category_service.get_by_id(db, category_id)
-
-
-@router.patch("/categories/{category_id}", response_model=CategoryResponse)
-async def update_category(
-    category_id: UUID,
-    data: CategoryUpdate,
-    db: async_session,
-    admin: User = Depends(get_current_admin),
-):
-    return await category_service.update(db, category_id, data)
-
-
-@router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_category(
-    category_id: UUID,
-    db: async_session,
-    admin: User = Depends(get_current_admin),
-):
-    await category_service.delete(db, category_id)
+router = APIRouter(prefix="/products", tags=["products"])
 
 
 # ── Products ──────────────────────────────────────────────────────────────────
 
-@router.post("/products", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
     data: ProductCreate,
     db: async_session,
@@ -70,7 +27,7 @@ async def create_product(
     return await product_service.create(db, data)
 
 
-@router.get("/products", response_model=ProductListResponse)
+@router.get("", response_model=ProductListResponse)
 async def get_all_products(
     db: async_session,
     skip: int = Query(default=0, ge=0),
@@ -90,12 +47,12 @@ async def get_all_products(
     return ProductListResponse(items=products, total=total, skip=skip, limit=limit)
 
 
-@router.get("/products/{product_id}", response_model=ProductResponse)
+@router.get("/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: UUID, db: async_session):
     return await product_service.get_by_id(db, product_id)
 
 
-@router.patch("/products/{product_id}", response_model=ProductResponse)
+@router.patch("/{product_id}", response_model=ProductResponse)
 async def update_product(
     product_id: UUID,
     data: ProductUpdate,
@@ -105,7 +62,7 @@ async def update_product(
     return await product_service.update(db, product_id, data)
 
 
-@router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(
     product_id: UUID,
     db: async_session,
@@ -117,7 +74,7 @@ async def delete_product(
 # ── Product images (admin only) ───────────────────────────────────────────────
 
 @router.post(
-    "/products/{product_id}/images",
+    "/{product_id}/images",
     response_model=ProductResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -132,7 +89,7 @@ async def add_product_image(
 
 
 @router.delete(
-    "/products/{product_id}/images/{image_id}",
+    "/{product_id}/images/{image_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_product_image(
