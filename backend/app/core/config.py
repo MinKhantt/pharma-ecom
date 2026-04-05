@@ -50,6 +50,7 @@ class Settings(BaseSettings):
 
     # OPENROUTER
     OPENROUTER_API_KEY: str
+    OPENROUTER_MODEL: str = "stepfun/step-3.5-flash:free"
 
     # Admin
     ADMIN_SECRET_KEY: str
