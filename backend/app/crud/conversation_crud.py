@@ -1,13 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, update, func
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy import select, update, func
+from sqlalchemy.orm import selectinload
 from uuid import UUID
 from typing import Optional, List
 
-from app.models.chat import Conversation, ConversationMember, Message
+from app.models.conversation import Conversation
+from app.models.conversation_member import ConversationMember
 from app.models.user import User
 from app.crud.base import CRUDBase
-
 
 class ConversationCRUD(CRUDBase[Conversation]):
 
@@ -74,58 +74,4 @@ class ConversationCRUD(CRUDBase[Conversation]):
         )
         await db.flush()
 
-
-class ConversationMemberCRUD(CRUDBase[ConversationMember]):
-
-    async def get_member(
-        self, db: AsyncSession, conversation_id: UUID, user_id: UUID
-    ) -> Optional[ConversationMember]:
-        result = await db.execute(
-            select(ConversationMember).where(
-                and_(
-                    ConversationMember.conversation_id == conversation_id,
-                    ConversationMember.user_id == user_id,
-                )
-            )
-        )
-        return result.scalar_one_or_none()
-
-
-class MessageCRUD(CRUDBase[Message]):
-
-    async def get_messages(
-        self,
-        db: AsyncSession,
-        conversation_id: UUID,
-        skip: int = 0,
-        limit: int = 50,
-    ) -> List[Message]:
-        result = await db.execute(
-            select(Message)
-            .where(Message.conversation_id == conversation_id)
-            .order_by(Message.created_at.asc())
-            .offset(skip)
-            .limit(limit)
-        )
-        return result.scalars().all()
-
-    async def mark_messages_read(
-        self, db: AsyncSession, conversation_id: UUID, user_id: UUID
-    ) -> None:
-        await db.execute(
-            update(Message)
-            .where(
-                and_(
-                    Message.conversation_id == conversation_id,
-                    Message.sender_id != user_id,
-                    Message.is_read == False,
-                )
-            )
-            .values(is_read=True)
-        )
-        await db.flush()
-
-
 conversation_crud = ConversationCRUD(Conversation)
-conversation_member_crud = ConversationMemberCRUD(ConversationMember)
-message_crud = MessageCRUD(Message)

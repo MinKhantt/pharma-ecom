@@ -8,7 +8,9 @@ from .cart_item import CartItem
 from .order import Order, OrderStatus
 from .order_item import OrderItem
 from .payment import Payment, PaymentMethod, PaymentStatus
-from .chat import Conversation, ConversationMember, Message
+from .conversation import Conversation
+from .conversation_member import ConversationMember
+from .message import Message
 from .customer import CustomerProfile
 from .ai_chat import AIChatMessage
 from .review import ShopReview
