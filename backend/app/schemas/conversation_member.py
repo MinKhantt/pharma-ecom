@@ -11,12 +11,15 @@ class ChatUserResponse(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def extract_avatar(cls, data):
-        # Check if data is an object (SQLAlchemy)
-        if hasattr(data, "profile") and data.profile:
-            data.avatar_url = data.profile.avatar_url
-        # Check if data is a dict (if manually passed)
-        elif isinstance(data, dict) and "profile" in data and data["profile"]:
-            data["avatar_url"] = data["profile"].get("avatar_url")
+        if hasattr(data, "__dict__"):
+            # Safely check __dict__ — won't trigger lazy load
+            profile = data.__dict__.get("profile")
+            if profile:
+                data.avatar_url = getattr(profile, "avatar_url", None)
+        elif isinstance(data, dict):
+            profile = data.get("profile")
+            if profile:
+                data["avatar_url"] = profile.get("avatar_url") if isinstance(profile, dict) else getattr(profile, "avatar_url", None)
         return data
     
     model_config = {"from_attributes": True}

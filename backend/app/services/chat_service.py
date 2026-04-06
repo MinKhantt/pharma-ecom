@@ -1,120 +1,173 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from fastapi import HTTPException, status
 from uuid import UUID
-from typing import List, Optional
 
-from app.crud.conversation_crud import conversation_crud
-from app.crud.conversation_member_crud import conversation_member_crud
-from app.crud.message_crud import message_crud
-from app.crud.user_crud import user_crud
+from app.crud.chat_crud import chat_crud
 from app.models.conversation import Conversation
-from app.models.conversation_member import ConversationMember
 from app.models.message import Message
-from app.schemas.conversation import StartConversationRequest
+from app.models.user import User
 from app.schemas.message import SendMessageRequest
+from app.schemas.conversation import StartConversationRequest
+
 from app.core.websocket_manager import manager
 
 
 class ChatService:
 
-    async def get_or_create_conversation(
-        self, db: AsyncSession, customer_id: UUID, admin_id: UUID
-    ) -> Conversation:
-        # Check if conversation already exists between these two
-        existing = await conversation_crud.get_existing_conversation(db, customer_id, admin_id)
-        if existing:
-            return existing
-
-        # Create new conversation
-        conversation = await conversation_crud.create(db, obj_in={"created_by": customer_id})
-
-        # Add members
-        await conversation_member_crud.create(db, obj_in={
-            "conversation_id": conversation.id,
-            "user_id": customer_id,
-            "role": "customer"
-        })
-        await conversation_member_crud.create(db, obj_in={
-            "conversation_id": conversation.id,
-            "user_id": admin_id,
-            "role": "admin"
-        })
-
-        await db.commit()
-        return await conversation_crud.get_by_id(db, conversation.id)
-
-    async def start_conversation(
-        self, db: AsyncSession, user_id: UUID, data: StartConversationRequest
-    ) -> Conversation:
-        # Find an admin to chat with (for now, just the first superuser)
-        admin = await user_crud.get_first_admin(db)
+    async def _get_any_admin(self, db: AsyncSession) -> User:
+        result = await db.execute(
+            select(User).where(
+                User.is_superuser == True,
+                User.is_active == True,
+            )
+        )
+        admin = result.scalars().first()
         if not admin:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="No admin available at the moment"
+                detail="No admin available at the moment",
             )
+        return admin
 
-        conversation = await self.get_or_create_conversation(db, user_id, admin.id)
+    def _message_payload(self, message: Message, event: str = "new_message") -> dict:
+        return {
+            "event": event,
+            "message_id": str(message.id),
+            "conversation_id": str(message.conversation_id),
+            "sender_id": str(message.sender_id),
+            "content": message.content,
+            "is_read": message.is_read,
+            "created_at": str(message.created_at),
+        }
 
-        # Send initial message
-        await self.send_message(db, user_id, conversation.id, SendMessageRequest(content=data.message))
+    # ── Customer ──────────────────────────────────────────────────────────────
 
-        return conversation
+    async def start_conversation(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        data: StartConversationRequest,
+    ) -> Conversation:
+        admin = await self._get_any_admin(db)
 
-    async def send_message(
-        self, db: AsyncSession, sender_id: UUID, conversation_id: UUID, data: SendMessageRequest
-    ) -> Message:
-        # Verify membership
-        member = await conversation_member_crud.get_member(db, conversation_id, sender_id)
-        if not member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this conversation")
+        existing = await chat_crud.get_existing_conversation(db, user_id, admin.id)
+        if existing:
+            message = await chat_crud.create_message(
+                db, existing.id, user_id, data.message
+            )
+            await chat_crud.touch_conversation(db, existing.id)
+            await db.commit()
 
-        message = await message_crud.create(db, obj_in={
-            "conversation_id": conversation_id,
-            "sender_id": sender_id,
-            "content": data.content
-        })
+            # Notify admin via WebSocket
+            await manager.send_to_admin(
+                admin.id, self._message_payload(message)
+            )
+            return await chat_crud.get_by_id(db, existing.id)
 
-        # Update conversation updated_at
-        await conversation_crud.touch_conversation(db, conversation_id)
-
-        await db.commit()
-        await db.refresh(message)
-
-        # Broadcast via WebSocket
-        await manager.broadcast_to_conversation(
-            conversation_id,
-            {
-                "type": "new_message",
-                "data": {
-                    "id": str(message.id),
-                    "content": message.content,
-                    "sender_id": str(message.sender_id),
-                    "created_at": message.created_at.isoformat(),
-                }
-            }
+        # New conversation
+        conversation = await chat_crud.create_conversation(db, user_id)
+        await chat_crud.add_member(db, conversation.id, user_id, role="customer")
+        await chat_crud.add_member(db, conversation.id, admin.id, role="admin")
+        message = await chat_crud.create_message(
+            db, conversation.id, user_id, data.message
         )
+        await db.commit()
 
-        return message
+        # Notify admin
+        payload = self._message_payload(message)
+        payload["event"] = "new_conversation"
+        await manager.send_to_admin(admin.id, payload)
+
+        return await chat_crud.get_by_id(db, conversation.id)
 
     async def get_my_conversations(
         self, db: AsyncSession, user_id: UUID
-    ) -> List[Conversation]:
-        return await conversation_crud.get_user_conversations(db, user_id)
+    ) -> list[Conversation]:
+        return await chat_crud.get_user_conversations(db, user_id)
 
     async def get_conversation(
         self, db: AsyncSession, user_id: UUID, conversation_id: UUID
     ) -> Conversation:
-        # Verify membership
-        member = await conversation_member_crud.get_member(db, conversation_id, user_id)
+        conversation = await chat_crud.get_by_id(db, conversation_id)
+        if not conversation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found",
+            )
+        member = await chat_crud.get_member(db, conversation_id, user_id)
         if not member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this conversation")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not a member of this conversation",
+            )
+        return conversation
 
-        # Mark messages as read
-        await message_crud.mark_messages_read(db, conversation_id, user_id)
+    async def send_message(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        conversation_id: UUID,
+        data: SendMessageRequest,
+        sender_is_admin: bool = False,
+    ) -> Message:
+        conversation = await chat_crud.get_by_id(db, conversation_id)
+        if not conversation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found",
+            )
+        member = await chat_crud.get_member(db, conversation_id, user_id)
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not a member of this conversation",
+            )
+
+        message = await chat_crud.create_message(
+            db, conversation_id, user_id, data.content
+        )
+        await chat_crud.touch_conversation(db, conversation_id)
         await db.commit()
 
-        return await conversation_crud.get_by_id(db, conversation_id)
+        payload = self._message_payload(message)
+
+        if sender_is_admin:
+            # Admin sent — push to customer's conversation WebSocket
+            await manager.send_to_conversation(conversation_id, payload)
+        else:
+            # Customer sent — push to all admins
+            await manager.broadcast_to_all_admins(payload)
+
+        return message
+
+    async def get_messages(
+        self,
+        db: AsyncSession,
+        user_id: UUID,
+        conversation_id: UUID,
+        skip: int = 0,
+        limit: int = 50,
+    ) -> list:
+        member = await chat_crud.get_member(db, conversation_id, user_id)
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not a member of this conversation",
+            )
+        return await chat_crud.get_messages(db, conversation_id, skip, limit)
+
+    async def mark_read(
+        self, db: AsyncSession, user_id: UUID, conversation_id: UUID
+    ) -> None:
+        member = await chat_crud.get_member(db, conversation_id, user_id)
+        if not member:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not a member of this conversation",
+            )
+        await chat_crud.mark_messages_read(db, conversation_id, user_id)
+        await db.commit()
 
 
 chat_service = ChatService()
