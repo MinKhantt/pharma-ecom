@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from .base import Base
 
+
 class OrderItem(Base):
     __tablename__ = "order_items"
 

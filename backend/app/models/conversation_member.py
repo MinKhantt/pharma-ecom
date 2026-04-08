@@ -5,12 +5,11 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .base import Base
 
+
 class ConversationMember(Base):
     __tablename__ = "conversation_members"
     __table_args__ = (
-        UniqueConstraint(
-            "conversation_id", "user_id", name="uq_conversation_member"
-        ),
+        UniqueConstraint("conversation_id", "user_id", name="uq_conversation_member"),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

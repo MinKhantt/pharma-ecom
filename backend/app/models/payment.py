@@ -31,7 +31,10 @@ class Payment(Base):
 
     # Auto-generated fake transaction ID — no real gateway needed
     transaction_id = Column(
-        String(255), nullable=False, unique=True, default=lambda: f"TXN-{uuid.uuid4().hex[:12].upper()}"
+        String(255),
+        nullable=False,
+        unique=True,
+        default=lambda: f"TXN-{uuid.uuid4().hex[:12].upper()}",
     )
 
     paid_at = Column(DateTime(timezone=True), nullable=True)

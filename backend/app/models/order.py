@@ -10,7 +10,7 @@ from .base import Base
 class OrderStatus(str, enum.Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
-    PROCESSING = "processing"                        # pharmacist reviewing
+    PROCESSING = "processing"  # pharmacist reviewing
     AWAITING_PRESCRIPTION = "awaiting_prescription"  # rx required, waiting upload
     READY_FOR_PICKUP = "ready_for_pickup"
     SHIPPED = "shipped"
@@ -24,7 +24,9 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    order_date = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    order_date = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
     total_amount = Column(Numeric(10, 2), nullable=False)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.PENDING)
 
@@ -32,8 +34,8 @@ class Order(Base):
     prescription_ref = Column(String(500), nullable=True)
     delivery_address = Column(Text, nullable=True)
     notes = Column(Text, nullable=True)
-    return_reason = Column(String, nullable=True)   # ← add
-    return_note   = Column(String, nullable=True)
+    return_reason = Column(String, nullable=True)  # ← add
+    return_note = Column(String, nullable=True)
 
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
