@@ -11,7 +11,6 @@ from app.schemas.payment import PaymentCreate
 
 
 class PaymentService:
-
     async def create_payment(
         self, db: AsyncSession, user_id: UUID, data: PaymentCreate
     ) -> Payment:
@@ -24,7 +23,11 @@ class PaymentService:
             )
 
         # Only allow payment for pending, confirmed, or awaiting prescription orders
-        allowable_statuses = {OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.AWAITING_PRESCRIPTION}
+        allowable_statuses = {
+            OrderStatus.PENDING,
+            OrderStatus.CONFIRMED,
+            OrderStatus.AWAITING_PRESCRIPTION,
+        }
         if order.status not in allowable_statuses:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -39,22 +42,28 @@ class PaymentService:
                 detail="Payment already exists for this order",
             )
 
-
         # Create payment — fake instant completion for school project
-        payment = await payment_crud.create(db, obj_in={
-            "order_id": data.order_id,
-            "amount": order.total_amount,
-            "currency": "MMK",
-            "method": data.method,
-            "status": PaymentStatus.COMPLETED,
-            "paid_at": datetime.now(timezone.utc),
-        })
+        payment = await payment_crud.create(
+            db,
+            obj_in={
+                "order_id": data.order_id,
+                "amount": order.total_amount,
+                "currency": "MMK",
+                "method": data.method,
+                "status": PaymentStatus.COMPLETED,
+                "paid_at": datetime.now(timezone.utc),
+            },
+        )
 
         # Update order status to CONFIRMED after payment
         if order.status == OrderStatus.AWAITING_PRESCRIPTION:
-            await order_crud.update(db, db_obj=order, obj_in={"status": OrderStatus.AWAITING_PRESCRIPTION})
+            await order_crud.update(
+                db, db_obj=order, obj_in={"status": OrderStatus.AWAITING_PRESCRIPTION}
+            )
         else:
-            await order_crud.update(db, db_obj=order, obj_in={"status": OrderStatus.CONFIRMED})
+            await order_crud.update(
+                db, db_obj=order, obj_in={"status": OrderStatus.CONFIRMED}
+            )
 
         await db.commit()
         return await payment_crud.get(db, payment.id)
@@ -108,16 +117,18 @@ class PaymentService:
                 detail="Order must be delivered or cancelled to request a refund",
             )
 
-        await payment_crud.update(db, db_obj=payment, obj_in={"status": PaymentStatus.REFUNDED})
-        await order_crud.update(db, db_obj=order, obj_in={"status": OrderStatus.REFUNDED})
+        await payment_crud.update(
+            db, db_obj=payment, obj_in={"status": PaymentStatus.REFUNDED}
+        )
+        await order_crud.update(
+            db, db_obj=order, obj_in={"status": OrderStatus.REFUNDED}
+        )
         await db.commit()
         return await payment_crud.get(db, payment.id)
 
     # ── Admin ─────────────────────────────────────────────────────────────────
 
-    async def get_payment_by_id(
-        self, db: AsyncSession, payment_id: UUID
-    ) -> Payment:
+    async def get_payment_by_id(self, db: AsyncSession, payment_id: UUID) -> Payment:
         payment = await payment_crud.get(db, payment_id)
         if not payment:
             raise HTTPException(

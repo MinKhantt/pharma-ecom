@@ -9,25 +9,21 @@ from app.models.conversation_member import ConversationMember
 from app.models.user import User
 from app.crud.base import CRUDBase
 
-class ConversationCRUD(CRUDBase[Conversation]):
 
+class ConversationCRUD(CRUDBase[Conversation]):
     def _full_query(self):
-        return (
-            select(Conversation)
-            .options(
-                selectinload(Conversation.members).joinedload(ConversationMember.user).joinedload(User.profile),
-                selectinload(Conversation.messages),
-            )
+        return select(Conversation).options(
+            selectinload(Conversation.members)
+            .joinedload(ConversationMember.user)
+            .joinedload(User.profile),
+            selectinload(Conversation.messages),
         )
 
     def _summary_query(self):
-        return (
-            select(Conversation)
-            .options(
-                selectinload(Conversation.members)
-                .joinedload(ConversationMember.user)
-                .joinedload(User.profile)
-            )
+        return select(Conversation).options(
+            selectinload(Conversation.members)
+            .joinedload(ConversationMember.user)
+            .joinedload(User.profile)
         )
 
     async def get_by_id(
@@ -64,14 +60,13 @@ class ConversationCRUD(CRUDBase[Conversation]):
                 return conv
         return None
 
-    async def touch_conversation(
-        self, db: AsyncSession, conversation_id: UUID
-    ) -> None:
+    async def touch_conversation(self, db: AsyncSession, conversation_id: UUID) -> None:
         await db.execute(
             update(Conversation)
             .where(Conversation.id == conversation_id)
             .values(updated_at=func.now())
         )
         await db.flush()
+
 
 conversation_crud = ConversationCRUD(Conversation)

@@ -1,8 +1,8 @@
 from pydantic import BaseModel, field_validator
 from uuid import UUID
 from decimal import Decimal
-from typing import Optional
 from app.schemas.product import ProductResponse
+
 
 class CartItemAdd(BaseModel):
     product_id: UUID

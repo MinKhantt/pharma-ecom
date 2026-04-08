@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi import status as http_status
 from uuid import UUID
 
 from app.db.database import async_session
 from app.schemas.payment import PaymentCreate, PaymentResponse
 from app.services.payment_service import payment_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
+from app.api.v1.dependencies import get_current_active_profile, get_current_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/payments", tags=["payments"])
@@ -13,7 +13,10 @@ router = APIRouter(prefix="/payments", tags=["payments"])
 
 # ── Customer endpoints ────────────────────────────────────────────────────────
 
-@router.post("", response_model=PaymentResponse, status_code=http_status.HTTP_201_CREATED)
+
+@router.post(
+    "", response_model=PaymentResponse, status_code=http_status.HTTP_201_CREATED
+)
 async def create_payment(
     data: PaymentCreate,
     db: async_session,
@@ -50,6 +53,7 @@ async def refund_payment(
 
 
 # ── Admin endpoints ───────────────────────────────────────────────────────────
+
 
 @router.get("/{payment_id}", response_model=PaymentResponse)
 async def get_payment(

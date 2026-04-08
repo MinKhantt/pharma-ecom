@@ -18,7 +18,9 @@ async def get_ws_user(websocket: WebSocket, db: AsyncSession) -> User:
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)
 
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         user_id: str = payload.get("sub")
         if not user_id:
             raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)

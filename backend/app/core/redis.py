@@ -26,6 +26,7 @@ pubsub_client = redis.Redis(connection_pool=_pubsub_pool)
 
 # ── Token blacklist helpers ───────────────────────────────────────────────────
 
+
 async def blacklist_token(token: str, expire_seconds: int) -> None:
     """Add a token to the blacklist with expiry matching the token's own expiry."""
     await redis_client.setex(f"blacklist:{token}", expire_seconds, "1")

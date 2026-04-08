@@ -1,9 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi import status as http_status
 from uuid import UUID
 
 from app.db.database import async_session, get_async_session
-from app.schemas.conversation import StartConversationRequest, ConversationResponse, ConversationSummaryResponse
+from app.schemas.conversation import (
+    StartConversationRequest,
+    ConversationResponse,
+    ConversationSummaryResponse,
+)
 from app.schemas.message import SendMessageRequest, MessageResponse
 from app.services.chat_service import chat_service
 from app.api.v1.dependencies import get_current_user, get_current_active_profile
@@ -15,6 +26,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 # ── WebSocket: Admin connects once after login ────────────────────────────────
+
 
 @router.websocket("/ws/admin")
 async def admin_websocket(websocket: WebSocket):
@@ -35,7 +47,7 @@ async def admin_websocket(websocket: WebSocket):
         try:
             while True:
                 # Keep connection alive — admin sends pings
-                data = await websocket.receive_text()
+                await websocket.receive_text()
         except WebSocketDisconnect:
             manager.disconnect_admin(user.id)
     finally:
@@ -43,6 +55,7 @@ async def admin_websocket(websocket: WebSocket):
 
 
 # ── WebSocket: Customer connects when opening a conversation ──────────────────
+
 
 @router.websocket("/ws/conversations/{conversation_id}")
 async def customer_websocket(websocket: WebSocket, conversation_id: UUID):
@@ -56,6 +69,7 @@ async def customer_websocket(websocket: WebSocket, conversation_id: UUID):
 
         # Verify user is a member of this conversation
         from app.crud.chat_crud import chat_crud
+
         member = await chat_crud.get_member(db, conversation_id, user.id)
         if not member:
             await websocket.close(code=http_status.WS_1008_POLICY_VIOLATION)
@@ -67,7 +81,7 @@ async def customer_websocket(websocket: WebSocket, conversation_id: UUID):
         try:
             while True:
                 # Keep connection alive — customer sends pings
-                data = await websocket.receive_text()
+                await websocket.receive_text()
         except WebSocketDisconnect:
             manager.disconnect_customer(conversation_id, websocket)
     finally:
@@ -75,6 +89,7 @@ async def customer_websocket(websocket: WebSocket, conversation_id: UUID):
 
 
 # ── REST: Customer endpoints ──────────────────────────────────────────────────
+
 
 @router.post(
     "/conversations",
@@ -151,6 +166,7 @@ async def mark_read(
 
 # ── REST: Admin endpoints ─────────────────────────────────────────────────────
 
+
 @router.get("/admin/conversations", response_model=list[ConversationSummaryResponse])
 async def admin_get_conversations(
     db: async_session,
@@ -178,9 +194,7 @@ async def admin_get_conversation(
             status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
         )
-    return await chat_service.get_conversation(
-        db, current_user.id, conversation_id
-    )
+    return await chat_service.get_conversation(db, current_user.id, conversation_id)
 
 
 @router.post(

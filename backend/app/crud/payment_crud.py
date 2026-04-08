@@ -8,11 +8,10 @@ from app.crud.base import CRUDBase
 
 
 class PaymentCRUD(CRUDBase[Payment]):
-
-    async def get_by_order_id(self, db: AsyncSession, order_id: UUID) -> Optional[Payment]:
-        result = await db.execute(
-            select(Payment).where(Payment.order_id == order_id)
-        )
+    async def get_by_order_id(
+        self, db: AsyncSession, order_id: UUID
+    ) -> Optional[Payment]:
+        result = await db.execute(select(Payment).where(Payment.order_id == order_id))
         return result.scalar_one_or_none()
 
 

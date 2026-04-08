@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status, UploadFile
+from fastapi import HTTPException, UploadFile
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Optional
@@ -30,7 +30,6 @@ async def unique_slug(db: AsyncSession, title: str) -> str:
 
 
 class ArticleService:
-
     async def create(
         self,
         db: AsyncSession,
@@ -40,16 +39,19 @@ class ArticleService:
         slug = await unique_slug(db, data.title)
         published_at = datetime.now(timezone.utc) if data.is_published else None
 
-        article = await article_crud.create(db, obj_in={
-            "title":        data.title,
-            "slug":         slug,
-            "content":      data.content,
-            "excerpt":      data.excerpt,
-            "category":     data.category,
-            "is_published": data.is_published,
-            "published_at": published_at,
-            "author_id":    author_id,
-        })
+        article = await article_crud.create(
+            db,
+            obj_in={
+                "title": data.title,
+                "slug": slug,
+                "content": data.content,
+                "excerpt": data.excerpt,
+                "category": data.category,
+                "is_published": data.is_published,
+                "published_at": published_at,
+                "author_id": author_id,
+            },
+        )
         await db.commit()
         return await article_crud.get_by_id(db, article.id)
 

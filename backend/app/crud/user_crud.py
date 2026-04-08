@@ -10,22 +10,17 @@ from app.crud.base import CRUDBase
 
 
 class UserCRUD(CRUDBase[User]):
-
     def _base_query(self):
         return select(User).options(selectinload(User.profile))
 
     # ── Read ──────────────────────────────────────────────────────────────────
 
     async def get_by_id(self, db: AsyncSession, user_id: UUID) -> Optional[User]:
-        result = await db.execute(
-            self._base_query().where(User.id == user_id)
-        )
+        result = await db.execute(self._base_query().where(User.id == user_id))
         return result.scalar_one_or_none()
 
     async def get_by_email(self, db: AsyncSession, email: str) -> Optional[User]:
-        result = await db.execute(
-            self._base_query().where(User.email == email)
-        )
+        result = await db.execute(self._base_query().where(User.email == email))
         return result.scalar_one_or_none()
 
     async def get_all_paginated(
@@ -64,9 +59,7 @@ class UserCRUD(CRUDBase[User]):
     # ── Helpers ───────────────────────────────────────────────────────────────
 
     async def exists_by_email(self, db: AsyncSession, email: str) -> bool:
-        result = await db.execute(
-            select(User.id).where(User.email == email)
-        )
+        result = await db.execute(select(User.id).where(User.email == email))
         return result.scalar_one_or_none() is not None
 
 

@@ -10,20 +10,14 @@ from app.crud.base import CRUDBase
 
 
 class ProductCRUD(CRUDBase[Product]):
-
     def _base_query(self):
-        return (
-            select(Product)
-            .options(
-                selectinload(Product.category),
-                selectinload(Product.images),
-            )
+        return select(Product).options(
+            selectinload(Product.category),
+            selectinload(Product.images),
         )
 
     async def get_by_id(self, db: AsyncSession, product_id: UUID) -> Optional[Product]:
-        result = await db.execute(
-            self._base_query().where(Product.id == product_id)
-        )
+        result = await db.execute(self._base_query().where(Product.id == product_id))
         return result.scalar_one_or_none()
 
     async def get_all_paginated(
@@ -43,7 +37,9 @@ class ProductCRUD(CRUDBase[Product]):
             count_query = count_query.where(Product.category_id == category_id)
         if requires_prescription is not None:
             query = query.where(Product.requires_prescription == requires_prescription)
-            count_query = count_query.where(Product.requires_prescription == requires_prescription)
+            count_query = count_query.where(
+                Product.requires_prescription == requires_prescription
+            )
         if search:
             query = query.where(Product.name.ilike(f"%{search}%"))
             count_query = count_query.where(Product.name.ilike(f"%{search}%"))
@@ -63,7 +59,7 @@ class ProductCRUD(CRUDBase[Product]):
             result = await db.execute(
                 select(ProductImage).where(
                     ProductImage.product_id == data["product_id"],
-                    ProductImage.is_primary == True,
+                    ProductImage.is_primary,
                 )
             )
             existing_primary = result.scalars().all()

@@ -12,20 +12,16 @@ from app.crud.base import CRUDBase
 
 
 class OrderCRUD(CRUDBase[Order]):
-
     def _base_query(self):
-        return (
-            select(Order)
-            .options(
-                joinedload(Order.user).joinedload(User.profile),
-                selectinload(Order.items)
-                .selectinload(OrderItem.product)
-                .selectinload(Product.images),
-                selectinload(Order.items)
-                .selectinload(OrderItem.product)
-                .selectinload(Product.category),
-                selectinload(Order.payment),
-            )
+        return select(Order).options(
+            joinedload(Order.user).joinedload(User.profile),
+            selectinload(Order.items)
+            .selectinload(OrderItem.product)
+            .selectinload(Product.images),
+            selectinload(Order.items)
+            .selectinload(OrderItem.product)
+            .selectinload(Product.category),
+            selectinload(Order.payment),
         )
 
     async def add_items(self, db: AsyncSession, items: list[dict]) -> None:
@@ -35,9 +31,7 @@ class OrderCRUD(CRUDBase[Order]):
         await db.flush()
 
     async def get_by_id(self, db: AsyncSession, order_id: UUID) -> Optional[Order]:
-        result = await db.execute(
-            self._base_query().where(Order.id == order_id)
-        )
+        result = await db.execute(self._base_query().where(Order.id == order_id))
         return result.scalar_one_or_none()
 
     async def get_by_user_paginated(
@@ -49,7 +43,9 @@ class OrderCRUD(CRUDBase[Order]):
         status: Optional[OrderStatus] = None,
     ) -> Tuple[List[Order], int]:
         query = self._base_query().where(Order.user_id == user_id)
-        count_query = select(func.count()).select_from(Order).where(Order.user_id == user_id)
+        count_query = (
+            select(func.count()).select_from(Order).where(Order.user_id == user_id)
+        )
 
         if status:
             query = query.where(Order.status == status)

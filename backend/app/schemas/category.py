@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator
 from uuid import UUID
 from typing import Optional
 
+
 class CategoryCreate(BaseModel):
     name: str
     description: Optional[str] = None

@@ -1,13 +1,12 @@
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi import status as http_status
-from sqlalchemy import select, func, extract
+from fastapi import APIRouter, Depends
+from sqlalchemy import select, func
 from datetime import datetime, timezone, timedelta
 
 from app.db.database import async_session
-from app.api.v1.dependencies import get_current_user, get_current_admin
+from app.api.v1.dependencies import get_current_admin
 from app.models.user import User
-from app.models.order import Order, OrderStatus
+from app.models.order import Order
 from app.models.payment import Payment, PaymentStatus
 from app.models.product import Product
 from decimal import Decimal
@@ -37,7 +36,7 @@ async def get_dashboard_stats(
     total_orders = orders_result.scalar() or 0
 
     users_result = await db.execute(
-        select(func.count()).select_from(User).where(User.is_superuser == False)
+        select(func.count()).select_from(User).where(~User.is_superuser)
     )
     total_users = users_result.scalar() or 0
 
@@ -45,8 +44,9 @@ async def get_dashboard_stats(
     total_products = products_result.scalar() or 0
 
     revenue_result = await db.execute(
-        select(func.coalesce(func.sum(Payment.amount), 0))
-        .where(Payment.status == PaymentStatus.COMPLETED)
+        select(func.coalesce(func.sum(Payment.amount), 0)).where(
+            Payment.status == PaymentStatus.COMPLETED
+        )
     )
     total_revenue = revenue_result.scalar() or Decimal(0)
 
@@ -67,12 +67,9 @@ async def get_chart_data(
 
     # Orders by status
     status_result = await db.execute(
-        select(Order.status, func.count().label("count"))
-        .group_by(Order.status)
+        select(Order.status, func.count().label("count")).group_by(Order.status)
     )
-    orders_by_status = {
-        str(r.status.value): r.count for r in status_result.all()
-    }
+    orders_by_status = {str(r.status.value): r.count for r in status_result.all()}
 
     # Orders by day (last 7 days)
     day_result = await db.execute(
@@ -89,10 +86,12 @@ async def get_chart_data(
     orders_by_day = []
     for i in range(7):
         d = today - timedelta(days=6 - i)
-        orders_by_day.append({
-            "day": days[d.weekday()],
-            "count": day_rows.get(str(d), 0),
-        })
+        orders_by_day.append(
+            {
+                "day": days[d.weekday()],
+                "count": day_rows.get(str(d), 0),
+            }
+        )
 
     # Revenue per day (last 14 days)
     day_revenue_result = await db.execute(
@@ -101,7 +100,7 @@ async def get_chart_data(
             func.sum(Payment.amount).label("total"),
         )
         .where(Payment.status == PaymentStatus.COMPLETED)
-        .where(Payment.paid_at != None)
+        .where(Payment.paid_at.isnot(None))
         .where(func.date(Payment.paid_at) >= today - timedelta(days=13))
         .group_by("day")
         .order_by("day")
@@ -112,10 +111,12 @@ async def get_chart_data(
     revenue_by_day = []
     for i in range(14):
         d = today - timedelta(days=13 - i)
-        revenue_by_day.append({
-            "day": d.strftime("%b %d"),
-            "total": day_revenue_rows.get(str(d), 0),
-        })
+        revenue_by_day.append(
+            {
+                "day": d.strftime("%b %d"),
+                "total": day_revenue_rows.get(str(d), 0),
+            }
+        )
 
     return ChartData(
         orders_by_status=orders_by_status,

@@ -9,6 +9,7 @@ from app.models.user import User
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
+
 @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_category(
     data: CategoryCreate,

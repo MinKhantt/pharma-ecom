@@ -1,7 +1,6 @@
 from fastapi import WebSocket
 from uuid import UUID
 import json
-from datetime import datetime
 
 
 class ConnectionManager:

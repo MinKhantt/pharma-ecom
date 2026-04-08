@@ -8,23 +8,15 @@ from app.crud.base import CRUDBase
 
 
 class ArticleCRUD(CRUDBase[Article]):
-
     def _base_query(self):
-        return (
-            select(Article)
-            .options(joinedload(Article.author))
-        )
+        return select(Article).options(joinedload(Article.author))
 
     async def get_by_id(self, db: AsyncSession, article_id: UUID) -> Optional[Article]:
-        result = await db.execute(
-            self._base_query().where(Article.id == article_id)
-        )
+        result = await db.execute(self._base_query().where(Article.id == article_id))
         return result.scalar_one_or_none()
 
     async def get_by_slug(self, db: AsyncSession, slug: str) -> Optional[Article]:
-        result = await db.execute(
-            self._base_query().where(Article.slug == slug)
-        )
+        result = await db.execute(self._base_query().where(Article.slug == slug))
         return result.scalar_one_or_none()
 
     async def get_all_paginated(
@@ -39,8 +31,8 @@ class ArticleCRUD(CRUDBase[Article]):
         count_query = select(func.count()).select_from(Article)
 
         if published_only:
-            query = query.where(Article.is_published == True)
-            count_query = count_query.where(Article.is_published == True)
+            query = query.where(Article.is_published)
+            count_query = count_query.where(Article.is_published)
 
         if category:
             query = query.where(Article.category == category)

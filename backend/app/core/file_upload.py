@@ -6,13 +6,14 @@ from app.core.config import settings
 
 # ── Allowed types per upload category ─────────────────────────────────────────
 PRODUCT_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
-PRESCRIPTION_TYPES  = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+PRESCRIPTION_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 
-MAX_SIZE_MB    = 5
+MAX_SIZE_MB = 5
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 
 
 # ── Directory helpers ──────────────────────────────────────────────────────────
+
 
 def get_products_dir() -> Path:
     path = Path(settings.UPLOAD_DIR) / "products"
@@ -27,6 +28,7 @@ def get_prescriptions_dir() -> Path:
 
 
 # ── Core save logic ────────────────────────────────────────────────────────────
+
 
 async def _save_file(
     file: UploadFile,
@@ -57,7 +59,7 @@ async def _save_file(
         ext = "jpg"
 
     unique_name = f"{uuid.uuid4().hex}.{ext}"
-    file_path   = upload_dir / unique_name
+    file_path = upload_dir / unique_name
 
     with open(file_path, "wb") as f:
         f.write(contents)
@@ -67,6 +69,7 @@ async def _save_file(
 
 
 # ── Public helpers ─────────────────────────────────────────────────────────────
+
 
 async def save_product_image(file: UploadFile) -> tuple[str, str, str]:
     """Save a product image. Allowed: jpeg, png, webp."""
@@ -95,6 +98,7 @@ async def save_upload_file(file: UploadFile) -> tuple[str, str, str]:
 
 
 # ── Delete helpers ─────────────────────────────────────────────────────────────
+
 
 def delete_product_image(file_name: str) -> None:
     file_path = Path(settings.UPLOAD_DIR) / "products" / file_name

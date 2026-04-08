@@ -6,8 +6,8 @@ from typing import List
 from app.models.message import Message
 from app.crud.base import CRUDBase
 
-class MessageCRUD(CRUDBase[Message]):
 
+class MessageCRUD(CRUDBase[Message]):
     async def get_messages(
         self,
         db: AsyncSession,
@@ -33,11 +33,12 @@ class MessageCRUD(CRUDBase[Message]):
                 and_(
                     Message.conversation_id == conversation_id,
                     Message.sender_id != user_id,
-                    Message.is_read == False,
+                    ~Message.is_read,
                 )
             )
             .values(is_read=True)
         )
         await db.flush()
+
 
 message_crud = MessageCRUD(Message)

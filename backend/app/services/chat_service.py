@@ -14,12 +14,11 @@ from app.core.websocket_manager import manager
 
 
 class ChatService:
-
     async def _get_any_admin(self, db: AsyncSession) -> User:
         result = await db.execute(
             select(User).where(
-                User.is_superuser == True,
-                User.is_active == True,
+                User.is_superuser,
+                User.is_active,
             )
         )
         admin = result.scalars().first()
@@ -60,9 +59,7 @@ class ChatService:
             await db.commit()
 
             # Notify admin via WebSocket
-            await manager.send_to_admin(
-                admin.id, self._message_payload(message)
-            )
+            await manager.send_to_admin(admin.id, self._message_payload(message))
             return await chat_crud.get_by_id(db, existing.id)
 
         # New conversation

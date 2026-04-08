@@ -9,12 +9,14 @@ from uuid import UUID
 
 router = APIRouter(prefix="/cart", tags=["cart"])
 
+
 @router.get("", response_model=CartResponse)
 async def get_cart(
     db: async_session,
     current_user: User = Depends(get_current_user),
 ):
     return await cart_service.get_cart(db, current_user.id)
+
 
 @router.post("/items", response_model=CartResponse)
 async def add_item(
@@ -23,6 +25,7 @@ async def add_item(
     current_user: User = Depends(get_current_user),
 ):
     return await cart_service.add_item(db, current_user.id, data)
+
 
 @router.patch("/items/{item_id}", response_model=CartResponse)
 async def update_item(
@@ -33,6 +36,7 @@ async def update_item(
 ):
     return await cart_service.update_item(db, current_user.id, item_id, data)
 
+
 @router.delete("/items/{item_id}", response_model=CartResponse)
 async def remove_item(
     item_id: UUID,
@@ -40,6 +44,7 @@ async def remove_item(
     current_user: User = Depends(get_current_user),
 ):
     return await cart_service.remove_item(db, current_user.id, item_id)
+
 
 @router.delete("", response_model=CartResponse)
 async def clear_cart(

@@ -11,22 +11,19 @@ from app.models.user import User
 
 
 class ChatCRUD:
-
     def _full_query(self):
-        return (
-            select(Conversation)
-            .options(
-                selectinload(Conversation.members).selectinload(ConversationMember.user).selectinload(User.profile),
-                selectinload(Conversation.messages),
-            )
+        return select(Conversation).options(
+            selectinload(Conversation.members)
+            .selectinload(ConversationMember.user)
+            .selectinload(User.profile),
+            selectinload(Conversation.messages),
         )
 
     def _summary_query(self):
-        return (
-            select(Conversation)
-            .options(
-                selectinload(Conversation.members).selectinload(ConversationMember.user).selectinload(User.profile),
-            )
+        return select(Conversation).options(
+            selectinload(Conversation.members)
+            .selectinload(ConversationMember.user)
+            .selectinload(User.profile),
         )
 
     async def create_conversation(
@@ -141,16 +138,14 @@ class ChatCRUD:
                 and_(
                     Message.conversation_id == conversation_id,
                     Message.sender_id != user_id,
-                    Message.is_read == False,
+                    ~Message.is_read,
                 )
             )
             .values(is_read=True)
         )
         await db.flush()
 
-    async def touch_conversation(
-        self, db: AsyncSession, conversation_id: UUID
-    ) -> None:
+    async def touch_conversation(self, db: AsyncSession, conversation_id: UUID) -> None:
         await db.execute(
             update(Conversation)
             .where(Conversation.id == conversation_id)

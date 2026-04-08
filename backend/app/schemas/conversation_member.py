@@ -3,6 +3,7 @@ from uuid import UUID
 from datetime import datetime
 from typing import Optional
 
+
 class ChatUserResponse(BaseModel):
     id: UUID
     full_name: Optional[str] = None
@@ -19,10 +20,15 @@ class ChatUserResponse(BaseModel):
         elif isinstance(data, dict):
             profile = data.get("profile")
             if profile:
-                data["avatar_url"] = profile.get("avatar_url") if isinstance(profile, dict) else getattr(profile, "avatar_url", None)
+                data["avatar_url"] = (
+                    profile.get("avatar_url")
+                    if isinstance(profile, dict)
+                    else getattr(profile, "avatar_url", None)
+                )
         return data
-    
+
     model_config = {"from_attributes": True}
+
 
 class MemberResponse(BaseModel):
     id: UUID

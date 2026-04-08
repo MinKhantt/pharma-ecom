@@ -16,7 +16,12 @@ from app.schemas.user import (
     UserWithProfileResponse,
 )
 from app.services.user_service import user_service
-from app.core.security import create_access_token, create_refresh_token, decode_refresh_token, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
+    verify_password,
+)
 from app.crud.user_crud import user_crud
 from app.core.config import settings
 from app.core.redis import blacklist_token, is_token_blacklisted
@@ -28,6 +33,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 bearer_scheme = HTTPBearer()
 
+
 # ── Create admin  ─────────────────────────────────────────────
 @router.post("/create-admin", status_code=status.HTTP_201_CREATED)
 async def create_admin(data: CreateAdminRequest, db: async_session):
@@ -37,23 +43,28 @@ async def create_admin(data: CreateAdminRequest, db: async_session):
             detail="Invalid secret key",
         )
 
-    user = await user_service.register(db, UserRegisterRequest(
-        full_name=data.full_name,
-        email=data.email,
-        password=data.password,
-    ))
+    user = await user_service.register(
+        db,
+        UserRegisterRequest(
+            full_name=data.full_name,
+            email=data.email,
+            password=data.password,
+        ),
+    )
 
-    await user_crud.update(db, db_obj=user, obj_in={
-        "is_superuser": True,
-        "is_profile_complete": True,
-    })
+    await user_crud.update(
+        db,
+        db_obj=user,
+        obj_in={
+            "is_superuser": True,
+            "is_profile_complete": True,
+        },
+    )
     await db.commit()
 
     # Re-fetch with profile eagerly loaded
     result = await db.execute(
-        select(User)
-        .where(User.id == user.id)
-        .options(selectinload(User.profile))
+        select(User).where(User.id == user.id).options(selectinload(User.profile))
     )
     user = result.scalar_one()
 
@@ -67,6 +78,7 @@ async def create_admin(data: CreateAdminRequest, db: async_session):
 
 # ── Register ──────────────────────────────────────────────────────────────────
 
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(data: UserRegisterRequest, db: async_session):
     user = await user_service.register(db, data)
@@ -76,6 +88,7 @@ async def register(data: UserRegisterRequest, db: async_session):
         "token_type": "bearer",
         "user": UserWithProfileResponse.model_validate(user),
     }
+
 
 @router.post("/login", status_code=status.HTTP_200_OK)
 async def login(data: LoginRequest, db: async_session):
@@ -101,6 +114,7 @@ async def login(data: LoginRequest, db: async_session):
         "user": UserWithProfileResponse.model_validate(user),
     }
 
+
 @router.get("/google")
 async def google_login(request: Request):
     redirect_uri = settings.GOOGLE_REDIRECT_URI
@@ -108,6 +122,7 @@ async def google_login(request: Request):
 
 
 # ── Google callback: exchange code for user info ──────────────────────────────
+
 
 @router.get("/google/callback")
 async def google_callback(request: Request, db: async_session):
@@ -136,7 +151,7 @@ async def google_callback(request: Request, db: async_session):
     access_token = create_access_token(str(user.id))
     refresh_token = create_refresh_token(str(user.id))
 
-        # Redirect to frontend with tokens in query params
+    # Redirect to frontend with tokens in query params
     redirect_url = (
         f"{settings.FRONTEND_URL}/auth/google/callback"
         f"?access_token={access_token}"
@@ -145,6 +160,7 @@ async def google_callback(request: Request, db: async_session):
     )
 
     return RedirectResponse(url=redirect_url)
+
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(data: RefreshTokenRequest, db: async_session):
@@ -183,6 +199,7 @@ async def refresh_token(data: RefreshTokenRequest, db: async_session):
         access_token=create_access_token(str(user.id)),
         refresh_token=create_refresh_token(str(user.id)),
     )
+
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(

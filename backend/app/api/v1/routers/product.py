@@ -18,6 +18,7 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 # ── Products ──────────────────────────────────────────────────────────────────
 
+
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
     data: ProductCreate,
@@ -72,6 +73,7 @@ async def delete_product(
 
 
 # ── Product images (admin only) ───────────────────────────────────────────────
+
 
 @router.post(
     "/{product_id}/images",

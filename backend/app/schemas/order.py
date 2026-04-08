@@ -16,7 +16,7 @@ class OrderUserResponse(BaseModel):
     phone_number: Optional[str] = None
     address: Optional[str] = None
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def extract_profile_info(cls, data):
         # If 'data' is a SQLAlchemy model instance
@@ -28,14 +28,17 @@ class OrderUserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class ReturnReason(str, enum.Enum):
-    DAMAGED     = "damaged"
-    WRONG_ITEM  = "wrong_item"
+    DAMAGED = "damaged"
+    WRONG_ITEM = "wrong_item"
     NOT_SATISFIED = "not_satisfied"
+
 
 class RequestReturnRequest(BaseModel):
     reason: ReturnReason
     note: Optional[str] = None
+
 
 class ApproveRejectReturnRequest(BaseModel):
     approve: bool
@@ -50,7 +53,7 @@ class OrderResponse(BaseModel):
     delivery_address: Optional[str]
     notes: Optional[str]
     return_reason: Optional[str] = None
-    return_note:   Optional[str] = None
+    return_note: Optional[str] = None
     updated_at: datetime
 
     user: Optional[OrderUserResponse] = None

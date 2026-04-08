@@ -11,7 +11,6 @@ from app.models.cart import Cart
 
 
 class CartService:
-
     async def _recalculate_and_save(self, db: AsyncSession, cart: Cart) -> None:
         """
         Re-fetch all cart items and recalculate total_amount correctly.
@@ -21,13 +20,12 @@ class CartService:
         all_items = await cart_item_crud.get_items_by_cart_id(db, cart.id)
 
         total = sum(
-            (item.unit_price or Decimal(0)) * item.quantity
-            for item in all_items
+            (item.unit_price or Decimal(0)) * item.quantity for item in all_items
         )
 
-        # Update total directly on the object. 
+        # Update total directly on the object.
         # Since 'cart' is already in the session, this will be saved on commit.
-        # We avoid cart_crud.update() because it calls db.add(cart) which can 
+        # We avoid cart_crud.update() because it calls db.add(cart) which can
         # trigger "Instance has been deleted" errors if the session state is complex.
         cart.total_amount = total
         await db.flush()
@@ -71,14 +69,14 @@ class CartService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Not enough inventory. Available: {product.inventory}",
                 )
-            
+
             await cart_item_crud.update(
-                db, 
-                db_obj=existing_item, 
+                db,
+                db_obj=existing_item,
                 obj_in={
                     "quantity": new_quantity,
-                    "total_price": existing_item.unit_price * new_quantity
-                }
+                    "total_price": existing_item.unit_price * new_quantity,
+                },
             )
         else:
             await cart_item_crud.create(
@@ -89,7 +87,7 @@ class CartService:
                     "quantity": data.quantity,
                     "unit_price": product.price,
                     "total_price": product.price * data.quantity,
-                }
+                },
             )
 
         await self._recalculate_and_save(db, cart)
@@ -125,30 +123,32 @@ class CartService:
             db_obj=item,
             obj_in={
                 "quantity": data.quantity,
-                "total_price": item.unit_price * data.quantity
-            }
+                "total_price": item.unit_price * data.quantity,
+            },
         )
 
         await self._recalculate_and_save(db, cart)
         await db.commit()
         return await cart_crud.get_by_user_id(db, user_id)
 
-    async def remove_item(
-        self, db: AsyncSession, user_id: UUID, item_id: UUID
-    ) -> Cart:
+    async def remove_item(self, db: AsyncSession, user_id: UUID, item_id: UUID) -> Cart:
         cart = await cart_crud.get_by_user_id(db, user_id)
         if not cart:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found"
+            )
 
         # Find the item in the loaded items collection
         item = next((i for i in cart.items if i.id == item_id), None)
         if not item:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found"
+            )
 
-        # Removing from relationship collection + delete-orphan cascade 
+        # Removing from relationship collection + delete-orphan cascade
         # is the safest way to delete and keep session in sync.
         cart.items.remove(item)
-        await db.flush() # Ensure deletion is sent to DB
+        await db.flush()  # Ensure deletion is sent to DB
 
         await self._recalculate_and_save(db, cart)
         await db.commit()
@@ -157,12 +157,14 @@ class CartService:
     async def clear_cart(self, db: AsyncSession, user_id: UUID) -> Cart:
         cart = await cart_crud.get_by_user_id(db, user_id)
         if not cart:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found"
+            )
 
         # Clearing the collection triggers delete-orphan for all items
         cart.items = []
         await db.flush()
-            
+
         await self._recalculate_and_save(db, cart)
         await db.commit()
         return await cart_crud.get_by_user_id(db, user_id)

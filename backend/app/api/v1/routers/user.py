@@ -1,7 +1,5 @@
-from fastapi import APIRouter, HTTPException, UploadFile, status, Depends, Query, File
+from fastapi import APIRouter, UploadFile, status, Depends, Query, File
 from uuid import UUID
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
 from app.db.database import async_session
 from app.schemas.user import (
@@ -11,7 +9,11 @@ from app.schemas.user import (
     UserWithProfileResponse,
 )
 from app.services.user_service import user_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
+from app.api.v1.dependencies import (
+    get_current_user,
+    get_current_active_profile,
+    get_current_admin,
+)
 from app.models.user import User
 from app.core.file_upload import save_upload_file
 
@@ -19,6 +21,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 # ── Complete profile ──────────────────────────────────────────────────────────
+
 
 @router.post("/me/profile", status_code=status.HTTP_200_OK)
 async def complete_profile(
@@ -32,6 +35,7 @@ async def complete_profile(
 
 # ── Get current user ──────────────────────────────────────────────────────────
 
+
 @router.get("/me", response_model=UserWithProfileResponse)
 async def get_me(
     db: async_session,
@@ -43,6 +47,7 @@ async def get_me(
 
 # ── Update current user ───────────────────────────────────────────────────────
 
+
 @router.patch("/me", response_model=UserWithProfileResponse)
 async def update_me(
     data: UpdateUserRequest,
@@ -52,7 +57,9 @@ async def update_me(
     user = await user_service.update_me(db, current_user.id, data)
     return UserWithProfileResponse.model_validate(user)
 
+
 # ── Admin: update user by id ─────────────────────────────────────────────────
+
 
 @router.patch("/{user_id}", response_model=UserWithProfileResponse)
 async def update_user_by_id(
@@ -66,6 +73,7 @@ async def update_user_by_id(
 
 
 # ── Admin: get all users ──────────────────────────────────────────────────────
+
 
 @router.get(
     "/",
@@ -83,6 +91,7 @@ async def get_all_users(
 
 # ── Admin: get user by id ─────────────────────────────────────────────────────
 
+
 @router.get("/{user_id}", response_model=UserWithProfileResponse)
 async def get_user_by_id(
     user_id: UUID,
@@ -94,6 +103,7 @@ async def get_user_by_id(
 
 
 # ── Admin: delete user ────────────────────────────────────────────────────────
+
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
@@ -111,6 +121,7 @@ async def change_password(
     current_user: User = Depends(get_current_active_profile),
 ):
     await user_service.change_password(db, current_user.id, data)
+
 
 @router.post("/me/avatar", response_model=UserWithProfileResponse)
 async def upload_avatar(

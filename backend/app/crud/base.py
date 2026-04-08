@@ -1,6 +1,5 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
-from uuid import UUID
-from sqlalchemy import select, update, delete, func
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.base import Base
 
@@ -33,11 +32,7 @@ class CRUDBase(Generic[ModelType]):
         return db_obj
 
     async def update(
-        self,
-        db: AsyncSession,
-        *,
-        db_obj: ModelType,
-        obj_in: Dict[str, Any]
+        self, db: AsyncSession, *, db_obj: ModelType, obj_in: Dict[str, Any]
     ) -> ModelType:
         for field, value in obj_in.items():
             setattr(db_obj, field, value)

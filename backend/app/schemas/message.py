@@ -1,7 +1,7 @@
 from pydantic import BaseModel, field_validator
 from uuid import UUID
 from datetime import datetime
-from typing import Optional
+
 
 class MessageResponse(BaseModel):
     id: UUID

@@ -14,7 +14,6 @@ from app.core.file_upload import save_upload_file, delete_upload_file
 
 
 class ProductService:
-
     async def create(self, db: AsyncSession, data: ProductCreate) -> Product:
         # Verify category exists
         category = await category_crud.get(db, data.category_id)
@@ -71,7 +70,9 @@ class ProductService:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Category not found",
                 )
-        await product_crud.update(db, db_obj=product, obj_in=data.model_dump(exclude_none=True))
+        await product_crud.update(
+            db, db_obj=product, obj_in=data.model_dump(exclude_none=True)
+        )
         await db.commit()
         return await product_crud.get_by_id(db, product_id)
 
@@ -101,16 +102,18 @@ class ProductService:
 
         file_name, file_type, url = await save_upload_file(file)
 
-        await product_crud.add_image(db, {
-            "product_id": product_id,
-            "file_name": file_name,
-            "file_type": file_type,
-            "url": url,
-            "is_primary": is_primary,
-        })
+        await product_crud.add_image(
+            db,
+            {
+                "product_id": product_id,
+                "file_name": file_name,
+                "file_type": file_type,
+                "url": url,
+                "is_primary": is_primary,
+            },
+        )
         await db.commit()
         return await product_crud.get_by_id(db, product_id)
-
 
     async def delete_image(
         self, db: AsyncSession, product_id: UUID, image_id: UUID

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status as http_status, Depends, Query, UploadFile, File, HTTPException
+from fastapi import APIRouter, status as http_status, Depends, Query, UploadFile, File
 from uuid import UUID
 from typing import Optional
 
@@ -8,18 +8,19 @@ from app.schemas.order import (
     OrderResponse,
     OrderListResponse,
     UpdateOrderStatusRequest,
-    RequestReturnRequest, 
-    ApproveRejectReturnRequest
+    RequestReturnRequest,
+    ApproveRejectReturnRequest,
 )
 from app.models.order import OrderStatus
 from app.services.order_service import order_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
+from app.api.v1.dependencies import get_current_active_profile, get_current_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 # ── Customer endpoints ────────────────────────────────────────────────────────
+
 
 @router.post("", response_model=OrderResponse, status_code=http_status.HTTP_201_CREATED)
 async def checkout(
@@ -71,6 +72,7 @@ async def upload_prescription(
 ):
     return await order_service.upload_prescription(db, current_user.id, order_id, file)
 
+
 @router.post("/me/{order_id}/return", response_model=OrderResponse)
 async def request_return(
     order_id: UUID,
@@ -82,6 +84,7 @@ async def request_return(
 
 
 # ── Admin endpoints ───────────────────────────────────────────────────────────
+
 
 @router.get("", response_model=OrderListResponse)
 async def get_all_orders(
@@ -114,6 +117,7 @@ async def update_order_status(
     admin: User = Depends(get_current_admin),
 ):
     return await order_service.update_order_status(db, order_id, data)
+
 
 @router.patch("/{order_id}/return", response_model=OrderResponse)
 async def handle_return(

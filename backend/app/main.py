@@ -5,8 +5,18 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from app.core.config import settings
 from app.api.v1.routers import (
-    auth, user, product, category, cart, order, 
-    payment, chat, ai_chat, dashboard, review, article
+    auth,
+    user,
+    product,
+    category,
+    cart,
+    order,
+    payment,
+    chat,
+    ai_chat,
+    dashboard,
+    review,
+    article,
 )
 
 app = FastAPI(
@@ -37,7 +47,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SECRET_KEY,
     same_site="lax",
-    https_only=False,   # Set to True in production with HTTPS
+    https_only=False,  # Set to True in production with HTTPS
 )
 
 api_prefix_v1 = f"{settings.API_PREFIX}{settings.API_V1}"

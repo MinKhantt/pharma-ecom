@@ -6,8 +6,8 @@ from typing import Optional
 from app.models.conversation_member import ConversationMember
 from app.crud.base import CRUDBase
 
-class ConversationMemberCRUD(CRUDBase[ConversationMember]):
 
+class ConversationMemberCRUD(CRUDBase[ConversationMember]):
     async def get_member(
         self, db: AsyncSession, conversation_id: UUID, user_id: UUID
     ) -> Optional[ConversationMember]:
@@ -20,5 +20,6 @@ class ConversationMemberCRUD(CRUDBase[ConversationMember]):
             )
         )
         return result.scalar_one_or_none()
+
 
 conversation_member_crud = ConversationMemberCRUD(ConversationMember)

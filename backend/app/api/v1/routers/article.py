@@ -1,21 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, Query, UploadFile, File
 from fastapi import status as http_status
 from uuid import UUID
 from typing import Optional
 
 from app.db.database import async_session
 from app.schemas.article import (
-    ArticleCreate, ArticleUpdate,
-    ArticleResponse, ArticleListResponse,
+    ArticleCreate,
+    ArticleUpdate,
+    ArticleResponse,
+    ArticleListResponse,
 )
 from app.services.article_service import article_service
-from app.api.v1.dependencies import get_current_user, get_current_admin
+from app.api.v1.dependencies import get_current_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
 
 # ── Public ────────────────────────────────────────────────────────────────────
+
 
 @router.get("", response_model=ArticleListResponse)
 async def get_articles(
@@ -37,6 +40,7 @@ async def get_article(slug: str, db: async_session):
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
 
+
 @router.get("/admin/all", response_model=ArticleListResponse)
 async def admin_get_articles(
     db: async_session,
@@ -51,7 +55,9 @@ async def admin_get_articles(
     return ArticleListResponse(items=articles, total=total, skip=skip, limit=limit)
 
 
-@router.post("", response_model=ArticleResponse, status_code=http_status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=ArticleResponse, status_code=http_status.HTTP_201_CREATED
+)
 async def create_article(
     data: ArticleCreate,
     db: async_session,

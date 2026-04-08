@@ -35,11 +35,15 @@ def create_refresh_token(subject: str) -> str:
         algorithm=settings.ALGORITHM,
     )
 
+
 def decode_refresh_token(token: str) -> str:
     """Decode refresh token and return user_id (sub). Raises HTTPException if invalid."""
     from fastapi import HTTPException, status
+
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         if payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

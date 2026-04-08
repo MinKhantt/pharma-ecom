@@ -6,6 +6,7 @@ from typing import Optional
 
 # ── Register ──────────────────────────────────────────────────────────────────
 
+
 class UserRegisterRequest(BaseModel):
     full_name: str
     email: EmailStr
@@ -28,14 +29,16 @@ class UserRegisterRequest(BaseModel):
 
 # ── Complete profile ───────────────────────────────────────────────────────────
 
+
 class CompleteProfileRequest(BaseModel):
     phone_number: Optional[str] = None
-    date_of_birth: Optional[str] = None    # YYYY-MM-DD
+    date_of_birth: Optional[str] = None  # YYYY-MM-DD
     avatar_url: Optional[str] = None
     address: Optional[str] = None
 
 
 # ── Response ──────────────────────────────────────────────────────────────────
+
 
 class UserResponse(BaseModel):
     id: UUID
@@ -78,15 +81,18 @@ class UpdateUserRequest(BaseModel):
         if v is not None and not v.strip():
             raise ValueError("full_name cannot be empty")
         return v.strip() if v else v
-    
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
 
 class GoogleUserInfo(BaseModel):
     email: EmailStr
     name: str
     picture: Optional[str] = None
+
 
 class ChangePasswordRequest(BaseModel):
     current_password: str

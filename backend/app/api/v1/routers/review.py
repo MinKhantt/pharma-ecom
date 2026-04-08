@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi import status as http_status
 from uuid import UUID
 
 from app.db.database import async_session
 from app.schemas.review import ReviewCreate, ReviewResponse, ReviewListResponse
 from app.services.review_service import review_service
-from app.api.v1.dependencies import get_current_user, get_current_active_profile, get_current_admin
+from app.api.v1.dependencies import get_current_active_profile, get_current_admin
 from app.models.user import User
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
 
 # ── Public ────────────────────────────────────────────────────────────────────
+
 
 @router.get("", response_model=ReviewListResponse)
 async def get_public_reviews(
@@ -25,7 +26,10 @@ async def get_public_reviews(
 
 # ── Customer ──────────────────────────────────────────────────────────────────
 
-@router.post("", response_model=ReviewResponse, status_code=http_status.HTTP_201_CREATED)
+
+@router.post(
+    "", response_model=ReviewResponse, status_code=http_status.HTTP_201_CREATED
+)
 async def create_review(
     data: ReviewCreate,
     db: async_session,
@@ -43,6 +47,7 @@ async def get_my_review(
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
+
 
 @router.get("/admin", response_model=ReviewListResponse)
 async def get_all_reviews(

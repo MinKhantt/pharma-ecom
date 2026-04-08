@@ -10,10 +10,7 @@ from app.schemas.review import ReviewCreate
 
 
 class ReviewService:
-
-    async def _has_delivered_order(
-        self, db: AsyncSession, user_id: UUID
-    ) -> bool:
+    async def _has_delivered_order(self, db: AsyncSession, user_id: UUID) -> bool:
         result = await db.execute(
             select(func.count())
             .select_from(Order)
@@ -40,35 +37,38 @@ class ReviewService:
                 detail="You have already submitted a review",
             )
 
-        review = await review_crud.create(db, obj_in={
-            "user_id": user_id,
-            "rating":  data.rating,
-            "comment": data.comment,
-            "is_approved": False,
-        })
+        review = await review_crud.create(
+            db,
+            obj_in={
+                "user_id": user_id,
+                "rating": data.rating,
+                "comment": data.comment,
+                "is_approved": False,
+            },
+        )
         await db.commit()
         return await review_crud.get_by_id(db, review.id)
 
-    async def get_my_review(
-        self, db: AsyncSession, user_id: UUID
-    ) -> ShopReview | None:
+    async def get_my_review(self, db: AsyncSession, user_id: UUID) -> ShopReview | None:
         return await review_crud.get_by_user_id(db, user_id)
 
     async def get_public_reviews(
         self, db: AsyncSession, skip: int = 0, limit: int = 20
     ) -> tuple[list[ShopReview], int]:
-        return await review_crud.get_all_paginated(db, approved_only=True, skip=skip, limit=limit)
+        return await review_crud.get_all_paginated(
+            db, approved_only=True, skip=skip, limit=limit
+        )
 
     # ── Admin ────────────────────────────────────────────────────────────────
 
     async def get_all_reviews(
         self, db: AsyncSession, skip: int = 0, limit: int = 20
     ) -> tuple[list[ShopReview], int]:
-        return await review_crud.get_all_paginated(db, approved_only=False, skip=skip, limit=limit)
+        return await review_crud.get_all_paginated(
+            db, approved_only=False, skip=skip, limit=limit
+        )
 
-    async def approve_review(
-        self, db: AsyncSession, review_id: UUID
-    ) -> ShopReview:
+    async def approve_review(self, db: AsyncSession, review_id: UUID) -> ShopReview:
         review = await review_crud.get_by_id(db, review_id)
         if not review:
             raise HTTPException(status_code=404, detail="Review not found")
@@ -76,9 +76,7 @@ class ReviewService:
         await db.commit()
         return await review_crud.get_by_id(db, review_id)
 
-    async def delete_review(
-        self, db: AsyncSession, review_id: UUID
-    ) -> None:
+    async def delete_review(self, db: AsyncSession, review_id: UUID) -> None:
         review = await review_crud.get_by_id(db, review_id)
         if not review:
             raise HTTPException(status_code=404, detail="Review not found")

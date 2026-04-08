@@ -2,21 +2,23 @@ import secrets
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 from fastapi import HTTPException, status
 from uuid import UUID
 
 from app.models.user import User
 from app.models.cart import Cart
 from app.models.customer import CustomerProfile
-from app.schemas.user import ChangePasswordRequest, UserRegisterRequest, CompleteProfileRequest, UpdateUserRequest
+from app.schemas.user import (
+    ChangePasswordRequest,
+    UserRegisterRequest,
+    CompleteProfileRequest,
+    UpdateUserRequest,
+)
 from app.core.security import hash_password, verify_password
 from app.crud.user_crud import user_crud
 
 
 class UserService:
-
     # ── Register ──────────────────────────────────────────────────────────────
 
     async def register(self, db: AsyncSession, data: UserRegisterRequest) -> User:
@@ -26,11 +28,14 @@ class UserService:
                 detail="Email already registered",
             )
 
-        user = await user_crud.create(db, obj_in={
-            "full_name": data.full_name,
-            "email": data.email,
-            "hashed_password": hash_password(data.password),
-        })
+        user = await user_crud.create(
+            db,
+            obj_in={
+                "full_name": data.full_name,
+                "email": data.email,
+                "hashed_password": hash_password(data.password),
+            },
+        )
 
         cart = Cart(user_id=user.id, total_amount=0)
         db.add(cart)
@@ -76,7 +81,7 @@ class UserService:
                 detail="User not found",
             )
         return user
-    
+
     # ── Update user (self) ────────────────────────────────────────────────────
 
     async def update_me(
@@ -145,8 +150,7 @@ class UserService:
     # ── Admin: update user by id ───────────────────────────────────────────────
 
     async def update_user_by_id(
-        self, db: AsyncSession, 
-        user_id: UUID, data: UpdateUserRequest
+        self, db: AsyncSession, user_id: UUID, data: UpdateUserRequest
     ) -> User:
         user = await user_crud.get_by_id(db, user_id)
         if not user:
@@ -177,26 +181,35 @@ class UserService:
         await db.commit()
         return await user_crud.get_by_id(db, user_id)
 
-    async def google_login(self, db: AsyncSession, email: str, full_name: str, avatar_url: Optional[str]) -> User:
+    async def google_login(
+        self, db: AsyncSession, email: str, full_name: str, avatar_url: Optional[str]
+    ) -> User:
         user = await user_crud.get_by_email(db, email)
 
         if not user:
             # Auto-register new user from Google
-            user = await user_crud.create(db, obj_in={
-                "full_name": full_name,
-                "email": email,
-                "hashed_password": hash_password(secrets.token_urlsafe(32)),  # random unusable password
-                "is_active": True,
-                "is_profile_complete": False,
-            })
+            user = await user_crud.create(
+                db,
+                obj_in={
+                    "full_name": full_name,
+                    "email": email,
+                    "hashed_password": hash_password(
+                        secrets.token_urlsafe(32)
+                    ),  # random unusable password
+                    "is_active": True,
+                    "is_profile_complete": False,
+                },
+            )
 
             # Auto-create cart
             from app.models.cart import Cart
+
             cart = Cart(user_id=user.id, total_amount=0)
             db.add(cart)
 
             # Pre-create profile with avatar from Google — user fills the rest
             from app.models.customer import CustomerProfile
+
             profile = CustomerProfile(user_id=user.id, avatar_url=avatar_url)
             db.add(profile)
 
@@ -204,7 +217,7 @@ class UserService:
 
         # Re-fetch with profile eagerly loaded
         return await user_crud.get_by_id(db, user.id)
-    
+
     async def change_password(
         self, db: AsyncSession, user_id: UUID, data: ChangePasswordRequest
     ) -> None:
@@ -227,7 +240,11 @@ class UserService:
                 detail="New password must be different from current password",
             )
 
-        await user_crud.update(db, db_obj=user, obj_in={"hashed_password": hash_password(data.new_password)})
+        await user_crud.update(
+            db,
+            db_obj=user,
+            obj_in={"hashed_password": hash_password(data.new_password)},
+        )
         await db.commit()
 
 

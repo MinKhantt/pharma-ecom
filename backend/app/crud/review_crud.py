@@ -9,21 +9,15 @@ from app.crud.base import CRUDBase
 
 
 class ReviewCRUD(CRUDBase[ShopReview]):
-
     def _base_query(self):
-        return (
-            select(ShopReview)
-            .options(
-                joinedload(ShopReview.user).joinedload(User.profile)
-            )
+        return select(ShopReview).options(
+            joinedload(ShopReview.user).joinedload(User.profile)
         )
 
     async def get_by_id(
         self, db: AsyncSession, review_id: UUID
     ) -> Optional[ShopReview]:
-        result = await db.execute(
-            self._base_query().where(ShopReview.id == review_id)
-        )
+        result = await db.execute(self._base_query().where(ShopReview.id == review_id))
         return result.scalar_one_or_none()
 
     async def get_by_user_id(
@@ -45,8 +39,8 @@ class ReviewCRUD(CRUDBase[ShopReview]):
         count_query = select(func.count()).select_from(ShopReview)
 
         if approved_only:
-            query = query.where(ShopReview.is_approved == True)
-            count_query = count_query.where(ShopReview.is_approved == True)
+            query = query.where(ShopReview.is_approved)
+            count_query = count_query.where(ShopReview.is_approved)
 
         total_result = await db.execute(count_query)
         total = total_result.scalar() or 0

@@ -10,6 +10,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
 
+
 class CreateAdminRequest(BaseModel):
     full_name: str
     email: EmailStr

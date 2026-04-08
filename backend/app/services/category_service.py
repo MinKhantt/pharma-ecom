@@ -6,8 +6,8 @@ from app.crud.category_crud import category_crud
 from app.schemas.category import CategoryCreate, CategoryUpdate
 from app.models.category import Category
 
-class CategoryService:
 
+class CategoryService:
     async def create(self, db: AsyncSession, data: CategoryCreate) -> Category:
         existing = await category_crud.get_by_name(db, data.name)
         if existing:
@@ -21,7 +21,7 @@ class CategoryService:
         return category
 
     async def get_all(
-        self, 
+        self,
         db: AsyncSession,
     ) -> list[Category]:
         return await category_crud.get_all_ordered(db)
@@ -51,7 +51,9 @@ class CategoryService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Category name already exists",
                 )
-        await category_crud.update(db, db_obj=category, obj_in=data.model_dump(exclude_none=True))
+        await category_crud.update(
+            db, db_obj=category, obj_in=data.model_dump(exclude_none=True)
+        )
         await db.commit()
         await db.refresh(category)
         return category
@@ -65,5 +67,6 @@ class CategoryService:
             )
         await category_crud.delete(db, db_obj=category)
         await db.commit()
+
 
 category_service = CategoryService()

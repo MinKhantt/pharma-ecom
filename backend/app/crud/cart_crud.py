@@ -11,20 +11,18 @@ from app.crud.base import CRUDBase
 
 
 class CartCRUD(CRUDBase[Cart]):
-
     def _base_query(self):
-        return (
-            select(Cart)
-            .options(
-                selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.images),
-                selectinload(Cart.items).selectinload(CartItem.product).selectinload(Product.category),
-            )
+        return select(Cart).options(
+            selectinload(Cart.items)
+            .selectinload(CartItem.product)
+            .selectinload(Product.images),
+            selectinload(Cart.items)
+            .selectinload(CartItem.product)
+            .selectinload(Product.category),
         )
 
     async def get_by_user_id(self, db: AsyncSession, user_id: UUID) -> Optional[Cart]:
-        result = await db.execute(
-            self._base_query().where(Cart.user_id == user_id)
-        )
+        result = await db.execute(self._base_query().where(Cart.user_id == user_id))
         return result.scalar_one_or_none()
 
 
