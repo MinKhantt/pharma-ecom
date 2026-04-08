@@ -19,3 +19,6 @@ logs/
 # IDE files
 .vscode/
 .idea/ 
+
+# ruff cache
+.ruff_cache/
