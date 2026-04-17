@@ -13,24 +13,24 @@ prescriptions, chat with pharmacists, and interact with an AI assistant
 
 ### Customer Features
 
--   User authentication (JWT + Google OAuth)
--   Browse medicines with search & filters
--   Add to cart and checkout
--   Upload prescriptions for restricted medicines
--   Track orders and request returns/refunds
--   Real-time chat with pharmacist (WebSocket)
--   AI assistant for medicine-related questions
--   Submit reviews and read health articles
+- User authentication (JWT + Google OAuth)
+- Browse medicines with search & filters
+- Add to cart and checkout
+- Upload prescriptions for restricted medicines
+- Track orders and request returns/refunds
+- Real-time chat with pharmacist (WebSocket)
+- AI assistant for medicine-related questions
+- Submit reviews and read health articles
 
 ### Admin Features
 
--   Dashboard with statistics and charts
--   Product & category management (CRUD + image upload)
--   Order management with full status workflow
--   User management
--   Review moderation
--   Article publishing system
--   Real-time chat with customers
+- Dashboard with statistics and charts
+- Product & category management (CRUD + image upload)
+- Order management with full status workflow
+- User management
+- Review moderation
+- Article publishing system
+- Real-time chat with customers
 
 ------------------------------------------------------------------------
 
@@ -45,37 +45,37 @@ backend/ \# FastAPI backend API
 
 ### Frontend
 
--   React 18 + TypeScript
--   Vite
--   Tailwind CSS
--   shadcn/ui (Radix UI)
--   TanStack Query
--   Zustand
--   Axios (with auto token refresh)
--   React Hook Form + Zod
--   WebSocket API
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui (Radix UI)
+- TanStack Query
+- Zustand
+- Axios (with auto token refresh)
+- React Hook Form + Zod
+- WebSocket API
 
 ### Backend
 
--   FastAPI
--   PostgreSQL
--   SQLAlchemy (async)
--   Alembic (migrations)
--   Redis (token blacklist & caching)
--   JWT Authentication
--   Google OAuth
--   OpenRouter (AI chatbot)
--   WebSocket (real-time chat)
+- FastAPI
+- PostgreSQL
+- SQLAlchemy (async)
+- Alembic (migrations)
+- Redis (token blacklist & caching)
+- JWT Authentication
+- Google OAuth
+- OpenRouter (AI chatbot)
+- WebSocket (real-time chat)
 
 ------------------------------------------------------------------------
 
 ## System Overview
 
--   Frontend communicates with backend via REST API\
--   Backend handles business logic, authentication, and database\
--   WebSocket enables real-time chat\
--   AI Chat powered by OpenRouter\
--   File uploads stored locally (products, prescriptions, avatars)
+- Frontend communicates with backend via REST API\
+- Backend handles business logic, authentication, and database\
+- WebSocket enables real-time chat\
+- AI Chat powered by OpenRouter\
+- File uploads stored locally (products, prescriptions, avatars)
 
 ------------------------------------------------------------------------
 
@@ -102,8 +102,8 @@ cd pharma-ecom
 
 After running backend:
 
--   Swagger UI → http://localhost:8000/docs\
--   ReDoc → http://localhost:8000/redoc
+- Swagger UI → <http://localhost:8000/docs>
+- ReDoc → <http://localhost:8000/redoc>
 
 ------------------------------------------------------------------------
 
@@ -129,20 +129,19 @@ delivered → return_requested → approved → refunded
 This project was developed as a **University Computing Project** to
 demonstrate:
 
--   Full-stack web development
--   Backend API design and architecture
--   Database modeling and relationships
--   Authentication and authorization (JWT, OAuth)
--   Real-time systems (WebSocket)
--   Integration of AI into web applications
+- Full-stack web development
+- Backend API design and architecture
+- Database modeling and relationships
+- Authentication and authorization (JWT, OAuth)
+- Real-time systems (WebSocket)
+- Integration of AI into web applications
 
 ------------------------------------------------------------------------
 
 ## Future Improvements
 
--   Real payment integration (Stripe / PayPal)
--   Cloud storage (AWS S3 / Cloudinary)
--   Deployment (Docker + CI/CD)
--   Mobile application
--   Smarter AI recommendations
-
+- Real payment integration (KBZPay / WavePay / Stripe)
+- Cloud storage (AWS S3 / Cloudinary)
+- Real RAG system
+- Deployment (Docker + CI/CD)
+- Mobile application
