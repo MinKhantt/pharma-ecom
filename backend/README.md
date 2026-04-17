@@ -145,15 +145,14 @@ backend/
 
 ### Prerequisites
 
-- Python 3.12+
-- PostgreSQL 15+
+- Python 3.12+ <https://www.python.org/downloads/windows/>
+- PostgreSQL 15+ <https://www.postgresql.org/download/>
 - Redis (or Docker)
-- uv
+- uv <https://docs.astral.sh/uv/getting-started/installation/>
 
-### 1. Clone and create virtual environment
+### 1. Create virtual environment
 
 ```bash
-git clone <repo>
 cd backend
 ```
 
@@ -171,9 +170,11 @@ source .venv/bin/activate
 
 ### 3. Start Redis
 
-```bash
-docker run -d --name redis -p 6379:6379 redis:alpine
-```
+if you use - Windows dowload redis in this <https://www.memurai.com/get-memurai> or if you use WSL run this in terminal ```sudo apt install redis-server``` then start server ```redis-server```
+
+if you use - macOS run this in terminal ```bash brew install redis``` then start server ```brew services start redis```
+
+if you use Docker open docker and run this in terminal ```docker run -d --name redis -p 6379:6379 redis:alpine```
 
 ### 4. Configure environment
 
@@ -251,7 +252,7 @@ ADMIN_SECRET_KEY=your-admin-secret
 ## Running the Server
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --port 8000 --reload
 ```
 
 API docs available at: `http://localhost:8000/docs`  
