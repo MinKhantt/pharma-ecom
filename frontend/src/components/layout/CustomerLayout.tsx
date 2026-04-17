@@ -58,6 +58,7 @@ export function CustomerLayout() {
   const navLinks = [
     { to: "/", label: "Home", icon: Home },
     { to: "/products", label: "Products", icon: Package },
+    {to: "/articles", label: "Articles", icon: Package },
     { to: "/orders", label: "Orders", icon: Package },
     { to: "/chat", label: "Chat", icon: MessageCircle },
     { to: "/ai-chat", label: "AI Assistant", icon: Bot },
@@ -100,7 +101,7 @@ export function CustomerLayout() {
 
           {/* Nav Links (desktop) */}
           <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.slice(0, 3).map((link) => (
+            {navLinks.slice(0, 4).map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
