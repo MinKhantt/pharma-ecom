@@ -117,7 +117,14 @@ export function Footer() {
                 <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                   <MapPin className="h-3.5 w-3.5 text-primary" />
                 </div>
-                <span>No. 22, Pareik Khayar St,<br />Myanaung, Myanmar</span>
+                <a
+                  href="https://maps.app.goo.gl/wk4cVQXbH5diMJ819"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  No. 22, Pareik Khayar St,<br />Myanaung, Myanmar
+                </a>
               </div>
             </div>
           </div>
