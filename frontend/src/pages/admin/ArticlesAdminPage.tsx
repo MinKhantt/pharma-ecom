@@ -34,34 +34,70 @@ function RichEditor({
   const quillRef = useRef<any>(null);
 
   useEffect(() => {
+    // Don't initialize if already initialized or no ref
     if (!editorRef.current || quillRef.current) return;
 
-    // Load Quill dynamically
+    let isMounted = true;
+
     const loadQuill = async () => {
-      const Quill = (await import("quill")).default;
-      quillRef.current = new Quill(editorRef.current!, {
-        theme: "snow",
-        modules: {
-          toolbar: [
-            [{ header: [1, 2, 3, false] }],
-            ["bold", "italic", "underline", "strike"],
-            [{ list: "ordered" }, { list: "bullet" }],
-            ["blockquote", "code-block"],
-            ["link"],
-            ["clean"],
-          ],
-        },
-      });
+      try {
+        const Quill = (await import("quill")).default;
+        
+        // Only create if still mounted and ref still exists
+        if (!isMounted || !editorRef.current) return;
+        
+        quillRef.current = new Quill(editorRef.current, {
+          theme: "snow",
+          modules: {
+            toolbar: [
+              [{ header: [1, 2, 3, false] }],
+              ["bold", "italic", "underline", "strike"],
+              [{ list: "ordered" }, { list: "bullet" }],
+              ["blockquote", "code-block"],
+              ["link"],
+              ["clean"],
+            ],
+          },
+        });
 
-      if (value) quillRef.current.root.innerHTML = value;
+        if (value) quillRef.current.root.innerHTML = value;
 
-      quillRef.current.on("text-change", () => {
-        onChange(quillRef.current.root.innerHTML);
-      });
+        quillRef.current.on("text-change", () => {
+          if (quillRef.current) {
+            onChange(quillRef.current.root.innerHTML);
+          }
+        });
+      } catch (error) {
+        console.error("Failed to load Quill:", error);
+      }
     };
 
     loadQuill();
-  }, []);
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+      if (quillRef.current) {
+        // Remove all event listeners
+        quillRef.current.off("text-change");
+        quillRef.current = null;
+      }
+      // Clear the container's inner HTML
+      if (editorRef.current) {
+        editorRef.current.innerHTML = '';
+      }
+    };
+  }, []); // Empty dependency array - only run once
+
+  // Update content when external value changes
+  useEffect(() => {
+    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+      const isDifferent = quillRef.current.root.innerHTML !== value;
+      if (isDifferent) {
+        quillRef.current.root.innerHTML = value || '';
+      }
+    }
+  }, [value]);
 
   return (
     <>
