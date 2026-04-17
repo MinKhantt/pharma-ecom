@@ -17,7 +17,7 @@ export default function OrdersAdminPage() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(0);
-  const limit = 20;
+  const limit = 8;
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-orders", statusFilter, page],

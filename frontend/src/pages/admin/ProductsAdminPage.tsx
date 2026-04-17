@@ -50,7 +50,7 @@ export default function ProductsAdminPage() {
   
   // Pagination State
   const [page, setPage] = useState(0);
-  const LIMIT = 6;
+  const LIMIT = 8;
 
   // --- QUERIES ---
   const { data, isLoading } = useQuery({

@@ -11,7 +11,7 @@ import { useState } from "react";
 
 export default function PaymentsAdminPage() {
   const [page, setPage] = useState(0);
-  const limit = 20;
+  const limit = 8;
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ["admin-orders-payments", page],
