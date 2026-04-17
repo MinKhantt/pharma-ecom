@@ -103,7 +103,7 @@ export function PublicLayout() {
                 {link.label}
               </Link>
             ))}
-            {isAuthenticated && user?.is_profile_complete && (
+            {isAuthenticated && user?.is_profile_complete && !user?.is_superuser && (
               <Link
                 to="/orders"
                 className={cn(
@@ -114,6 +114,19 @@ export function PublicLayout() {
                 )}
               >
                 Orders
+              </Link>
+            )}
+            {isAuthenticated && user?.is_superuser && (
+              <Link
+                to="/admin"
+                className={cn(
+                  "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  location.pathname === "/admin"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                Admin Panel
               </Link>
             )}
           </nav>
