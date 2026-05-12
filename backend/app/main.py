@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+import uvicorn
+
 from app.core.config import settings
 from app.api.v1.routers import (
     auth,
@@ -69,3 +71,6 @@ app.include_router(article.router, prefix=api_prefix_v1)
 @app.get("/health", tags=["health"])
 async def health_check():
     return {"status": "ok"}
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
