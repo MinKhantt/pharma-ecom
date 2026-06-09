@@ -15,7 +15,6 @@ from app.core.file_upload import save_upload_file, delete_upload_file
 
 class ProductService:
     async def create(self, db: AsyncSession, data: ProductCreate) -> Product:
-        # Verify category exists
         category = await category_crud.get(db, data.category_id)
         if not category:
             raise HTTPException(

@@ -40,8 +40,6 @@ class ChatService:
             "created_at": str(message.created_at),
         }
 
-    # ── Customer ──────────────────────────────────────────────────────────────
-
     async def start_conversation(
         self,
         db: AsyncSession,
@@ -58,11 +56,9 @@ class ChatService:
             await chat_crud.touch_conversation(db, existing.id)
             await db.commit()
 
-            # Notify admin via WebSocket
             await manager.send_to_admin(admin.id, self._message_payload(message))
             return await chat_crud.get_by_id(db, existing.id)
 
-        # New conversation
         conversation = await chat_crud.create_conversation(db, user_id)
         await chat_crud.add_member(db, conversation.id, user_id, role="customer")
         await chat_crud.add_member(db, conversation.id, admin.id, role="admin")
@@ -71,7 +67,6 @@ class ChatService:
         )
         await db.commit()
 
-        # Notify admin
         payload = self._message_payload(message)
         payload["event"] = "new_conversation"
         await manager.send_to_admin(admin.id, payload)
@@ -130,10 +125,8 @@ class ChatService:
         payload = self._message_payload(message)
 
         if sender_is_admin:
-            # Admin sent — push to customer's conversation WebSocket
             await manager.send_to_conversation(conversation_id, payload)
         else:
-            # Customer sent — push to all admins
             await manager.broadcast_to_all_admins(payload)
 
         return message

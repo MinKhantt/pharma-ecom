@@ -22,14 +22,12 @@ class ReviewService:
     async def create_review(
         self, db: AsyncSession, user_id: UUID, data: ReviewCreate
     ) -> ShopReview:
-        # Must have at least one delivered order
         if not await self._has_delivered_order(db, user_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only leave a review after receiving a delivered order",
             )
 
-        # One review per user
         existing = await review_crud.get_by_user_id(db, user_id)
         if existing:
             raise HTTPException(

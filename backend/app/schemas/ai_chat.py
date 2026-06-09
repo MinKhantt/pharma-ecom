@@ -10,7 +10,7 @@ class ChatMessage(BaseModel):
 
 
 class AIChatRequest(BaseModel):
-    message: str  # only the new message from user
+    message: str 
 
     @field_validator("message")
     @classmethod

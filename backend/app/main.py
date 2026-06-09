@@ -49,7 +49,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=settings.SECRET_KEY,
     same_site="lax",
-    https_only=False,  # Set to True in production with HTTPS
+    https_only=False,
 )
 
 api_prefix_v1 = f"{settings.API_PREFIX}{settings.API_V1}"

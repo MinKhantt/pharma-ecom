@@ -21,7 +21,6 @@ class OrderService:
     async def checkout(
         self, db: AsyncSession, user_id: UUID, data: CheckoutRequest
     ) -> Order:
-        # Get cart with items
         cart = await cart_crud.get_by_user_id(db, user_id)
         if not cart or not cart.items:
             raise HTTPException(
@@ -29,12 +28,10 @@ class OrderService:
                 detail="Cart is empty",
             )
 
-        # Check if any product requires prescription
         needs_prescription = any(
             item.product.requires_prescription for item in cart.items
         )
 
-        # Validate inventory for all items
         for item in cart.items:
             product = await product_crud.get_by_id(db, item.product_id)
             if product.inventory < item.quantity:
@@ -43,7 +40,6 @@ class OrderService:
                     detail=f"Not enough inventory for {product.name}. Available: {product.inventory}",
                 )
 
-        # Create order
         order_status = (
             OrderStatus.AWAITING_PRESCRIPTION
             if needs_prescription
@@ -61,7 +57,6 @@ class OrderService:
             },
         )
 
-        # Create order items and deduct inventory
         for item in cart.items:
             await order_crud.add_items(
                 db,
@@ -74,7 +69,6 @@ class OrderService:
                     }
                 ],
             )
-            # Deduct inventory
             product = await product_crud.get_by_id(db, item.product_id)
             await product_crud.update(
                 db,
@@ -82,7 +76,6 @@ class OrderService:
                 obj_in={"inventory": product.inventory - item.quantity},
             )
 
-        # Clear cart after checkout
         items = await cart_item_crud.get_items_by_cart_id(db, cart.id)
         for item in items:
             await cart_item_crud.delete(db, db_obj=item)
@@ -156,7 +149,6 @@ class OrderService:
                 detail="Order not found",
             )
 
-        # Only pending or awaiting prescription or confirmed or processing orders can be cancelled by customer
         cancellable = {
             OrderStatus.PENDING,
             OrderStatus.AWAITING_PRESCRIPTION,
@@ -169,7 +161,6 @@ class OrderService:
                 detail=f"Cannot cancel order with status: {order.status.value}",
             )
 
-        # Restore inventory
         for item in order.items:
             product = await product_crud.get_by_id(db, item.product_id)
             if product:

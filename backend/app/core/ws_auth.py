@@ -9,10 +9,6 @@ from app.models.user import User
 
 
 async def get_ws_user(websocket: WebSocket, db: AsyncSession) -> User:
-    """
-    Authenticate WebSocket connection via token query param.
-    Frontend connects as: ws://localhost:8000/ws/...?token=<access_token>
-    """
     token = websocket.query_params.get("token")
     if not token:
         raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION)

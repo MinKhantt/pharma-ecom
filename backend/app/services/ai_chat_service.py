@@ -37,21 +37,17 @@ class AIChatService:
         message: str,
     ) -> Dict[str, Any]:
         try:
-            # 1. Product Search & Context
             products = await PharmacySearchHelper.search_products(db, message)
             product_context = PharmacySearchHelper.build_product_context(products)
             system_prompt = self._build_system_prompt(product_context)
 
-            # 2. Conversation History (Last 10 messages for AI context)
             history = await ai_chat_crud.get_history(db, user_id, limit=10)
 
-            # 3. Prepare AI Messages
             messages = [{"role": "system", "content": system_prompt}]
             for msg in history:
                 messages.append({"role": msg.role, "content": msg.content})
             messages.append({"role": "user", "content": message})
 
-            # 4. Get AI Response
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -59,19 +55,16 @@ class AIChatService:
             )
             reply = response.choices[0].message.content
 
-            # 5. Save Conversation
-            # User message
+            
             await ai_chat_crud.create(
                 db, obj_in={"user_id": user_id, "role": "user", "content": message}
             )
-            # AI message
             await ai_chat_crud.create(
                 db, obj_in={"user_id": user_id, "role": "assistant", "content": reply}
             )
 
             await db.commit()
 
-            # 6. Return response and fresh history
             updated_history = await ai_chat_crud.get_history(db, user_id)
             return {"reply": reply, "history": updated_history}
 

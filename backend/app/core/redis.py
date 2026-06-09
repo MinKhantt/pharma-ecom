@@ -23,16 +23,10 @@ _pubsub_pool = redis.ConnectionPool(
 )
 pubsub_client = redis.Redis(connection_pool=_pubsub_pool)
 
-
-# ── Token blacklist helpers ───────────────────────────────────────────────────
-
-
 async def blacklist_token(token: str, expire_seconds: int) -> None:
-    """Add a token to the blacklist with expiry matching the token's own expiry."""
     await redis_client.setex(f"blacklist:{token}", expire_seconds, "1")
 
 
 async def is_token_blacklisted(token: str) -> bool:
-    """Returns True if the token has been blacklisted (logged out)."""
     result = await redis_client.get(f"blacklist:{token}")
     return result is not None

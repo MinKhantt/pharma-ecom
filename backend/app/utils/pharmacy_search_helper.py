@@ -6,7 +6,6 @@ from app.models.product import Product
 
 
 class PharmacySearchHelper:
-    """Helper class to handle product search and context building for AI."""
 
     STOP_WORDS = {
         "do",
@@ -65,18 +64,15 @@ class PharmacySearchHelper:
 
     @classmethod
     def extract_keywords(cls, message: str) -> List[str]:
-        """Extract meaningful keywords from user message for product search."""
         words = re.findall(r"[a-zA-Z]+", message.lower())
         return [w for w in words if len(w) >= 3 and w not in cls.STOP_WORDS]
 
     @staticmethod
     async def search_products(db: AsyncSession, message: str) -> List[Product]:
-        """Search products by name, manufacturer, or description based on keywords."""
         keywords = PharmacySearchHelper.extract_keywords(message)
         if not keywords:
             return []
 
-        # Build OR conditions across name, manufacturer, description
         conditions = []
         for kw in keywords:
             pattern = f"%{kw}%"
@@ -98,7 +94,6 @@ class PharmacySearchHelper:
 
     @staticmethod
     def build_product_context(products: List[Product]) -> str:
-        """Format found products into a readable context string for the AI."""
         if not products:
             return "No specific products found in the database matching this query."
 

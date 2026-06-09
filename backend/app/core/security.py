@@ -37,7 +37,6 @@ def create_refresh_token(subject: str) -> str:
 
 
 def decode_refresh_token(token: str) -> str:
-    """Decode refresh token and return user_id (sub). Raises HTTPException if invalid."""
     from fastapi import HTTPException, status
 
     try:

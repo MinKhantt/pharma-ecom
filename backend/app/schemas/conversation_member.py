@@ -13,7 +13,6 @@ class ChatUserResponse(BaseModel):
     @classmethod
     def extract_avatar(cls, data):
         if hasattr(data, "__dict__"):
-            # Safely check __dict__ — won't trigger lazy load
             profile = data.__dict__.get("profile")
             if profile:
                 data.avatar_url = getattr(profile, "avatar_url", None)

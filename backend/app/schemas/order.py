@@ -19,7 +19,6 @@ class OrderUserResponse(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def extract_profile_info(cls, data):
-        # If 'data' is a SQLAlchemy model instance
         if hasattr(data, "profile") and data.profile:
             data.phone_number = data.profile.phone_number
             data.address = data.profile.address

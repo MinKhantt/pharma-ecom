@@ -4,15 +4,11 @@ from pathlib import Path
 from fastapi import UploadFile, HTTPException, status
 from app.core.config import settings
 
-# ── Allowed types per upload category ─────────────────────────────────────────
 PRODUCT_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 PRESCRIPTION_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
 
 MAX_SIZE_MB = 5
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
-
-
-# ── Directory helpers ──────────────────────────────────────────────────────────
 
 
 def get_products_dir() -> Path:
@@ -27,18 +23,12 @@ def get_prescriptions_dir() -> Path:
     return path
 
 
-# ── Core save logic ────────────────────────────────────────────────────────────
-
-
 async def _save_file(
     file: UploadFile,
     allowed_types: set[str],
     upload_dir: Path,
     url_path: str,
 ) -> tuple[str, str, str]:
-    """
-    Validates content type and size, saves the file, returns (file_name, file_type, url).
-    """
     if file.content_type not in allowed_types:
         friendly = ", ".join(t.split("/")[-1] for t in sorted(allowed_types))
         raise HTTPException(
@@ -53,7 +43,6 @@ async def _save_file(
             detail=f"File too large. Maximum size is {MAX_SIZE_MB}MB",
         )
 
-    # Build extension
     ext = file.content_type.split("/")[-1]
     if ext == "jpeg":
         ext = "jpg"
@@ -68,11 +57,7 @@ async def _save_file(
     return unique_name, file.content_type, url
 
 
-# ── Public helpers ─────────────────────────────────────────────────────────────
-
-
 async def save_product_image(file: UploadFile) -> tuple[str, str, str]:
-    """Save a product image. Allowed: jpeg, png, webp."""
     return await _save_file(
         file,
         allowed_types=PRODUCT_IMAGE_TYPES,
@@ -82,7 +67,6 @@ async def save_product_image(file: UploadFile) -> tuple[str, str, str]:
 
 
 async def save_prescription(file: UploadFile) -> tuple[str, str, str]:
-    """Save a prescription file. Allowed: jpeg, png, webp, pdf."""
     return await _save_file(
         file,
         allowed_types=PRESCRIPTION_TYPES,
@@ -90,14 +74,8 @@ async def save_prescription(file: UploadFile) -> tuple[str, str, str]:
         url_path="prescriptions",
     )
 
-
-# ── Keep backwards-compatible alias ───────────────────────────────────────────
-# Existing code that calls save_upload_file() still works without changes.
 async def save_upload_file(file: UploadFile) -> tuple[str, str, str]:
     return await save_product_image(file)
-
-
-# ── Delete helpers ─────────────────────────────────────────────────────────────
 
 
 def delete_product_image(file_name: str) -> None:
@@ -111,7 +89,5 @@ def delete_prescription(file_name: str) -> None:
     if file_path.exists():
         os.remove(file_path)
 
-
-# Backwards-compatible alias
 def delete_upload_file(file_name: str) -> None:
     delete_product_image(file_name)

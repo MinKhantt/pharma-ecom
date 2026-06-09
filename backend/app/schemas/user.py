@@ -3,10 +3,6 @@ from uuid import UUID
 from datetime import datetime
 from typing import Optional
 
-
-# ── Register ──────────────────────────────────────────────────────────────────
-
-
 class UserRegisterRequest(BaseModel):
     full_name: str
     email: EmailStr
@@ -26,19 +22,11 @@ class UserRegisterRequest(BaseModel):
             raise ValueError("password must be at least 8 characters")
         return v
 
-
-# ── Complete profile ───────────────────────────────────────────────────────────
-
-
 class CompleteProfileRequest(BaseModel):
     phone_number: Optional[str] = None
     date_of_birth: Optional[str] = None  # YYYY-MM-DD
     avatar_url: Optional[str] = None
     address: Optional[str] = None
-
-
-# ── Response ──────────────────────────────────────────────────────────────────
-
 
 class UserResponse(BaseModel):
     id: UUID

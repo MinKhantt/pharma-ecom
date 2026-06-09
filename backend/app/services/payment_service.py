@@ -14,7 +14,6 @@ class PaymentService:
     async def create_payment(
         self, db: AsyncSession, user_id: UUID, data: PaymentCreate
     ) -> Payment:
-        # Verify order exists and belongs to user
         order = await order_crud.get_by_id(db, data.order_id)
         if not order or order.user_id != user_id:
             raise HTTPException(
@@ -22,7 +21,6 @@ class PaymentService:
                 detail="Order not found",
             )
 
-        # Only allow payment for pending, confirmed, or awaiting prescription orders
         allowable_statuses = {
             OrderStatus.PENDING,
             OrderStatus.CONFIRMED,
@@ -34,7 +32,6 @@ class PaymentService:
                 detail=f"Order cannot be paid in status: {order.status.value}",
             )
 
-        # Check payment doesn't already exist for this order
         existing = await payment_crud.get_by_order_id(db, data.order_id)
         if existing:
             raise HTTPException(
@@ -42,7 +39,6 @@ class PaymentService:
                 detail="Payment already exists for this order",
             )
 
-        # Create payment — fake instant completion for school project
         payment = await payment_crud.create(
             db,
             obj_in={
@@ -55,7 +51,6 @@ class PaymentService:
             },
         )
 
-        # Update order status to CONFIRMED after payment
         if order.status == OrderStatus.AWAITING_PRESCRIPTION:
             await order_crud.update(
                 db, db_obj=order, obj_in={"status": OrderStatus.AWAITING_PRESCRIPTION}

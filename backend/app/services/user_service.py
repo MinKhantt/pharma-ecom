@@ -19,7 +19,6 @@ from app.crud.user_crud import user_crud
 
 
 class UserService:
-    # ── Register ──────────────────────────────────────────────────────────────
 
     async def register(self, db: AsyncSession, data: UserRegisterRequest) -> User:
         if await user_crud.exists_by_email(db, data.email):
@@ -42,10 +41,8 @@ class UserService:
 
         await db.commit()
 
-        # Re-fetch with profile eagerly loaded
         return await user_crud.get_by_id(db, user.id)
 
-    # ── Complete profile ──────────────────────────────────────────────────────
 
     async def complete_profile(
         self, db: AsyncSession, user_id: UUID, data: CompleteProfileRequest
@@ -68,10 +65,9 @@ class UserService:
         await user_crud.update(db, db_obj=user, obj_in={"is_profile_complete": True})
         await db.commit()
 
-        # Re-fetch with profile eagerly loaded
+       
         return await user_crud.get_by_id(db, user_id)
 
-    # ── Get current user ──────────────────────────────────────────────────────
 
     async def get_me(self, db: AsyncSession, user_id: UUID) -> User:
         user = await user_crud.get_by_id(db, user_id)
@@ -82,7 +78,6 @@ class UserService:
             )
         return user
 
-    # ── Update user (self) ────────────────────────────────────────────────────
 
     async def update_me(
         self, db: AsyncSession, user_id: UUID, data: UpdateUserRequest
@@ -94,7 +89,6 @@ class UserService:
                 detail="User not found",
             )
 
-        # Split fields — some go to User, some go to CustomerProfile
         user_fields = {}
         profile_fields = {}
 
