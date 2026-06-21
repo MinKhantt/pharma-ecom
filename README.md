@@ -34,6 +34,21 @@ prescriptions, chat with pharmacists, and interact with an AI assistant
 
 ------------------------------------------------------------------------
 
+## Project UI Overview
+
+<table>
+  <tr>
+    <td><img src="images/1.png" alt="Screenshot 1" width="100%"></td>
+    <td><img src="images/2.png" alt="Screenshot 2" width="100%"></td>
+  </tr>
+  <tr>
+    <td><img src="images/3.png" alt="Screenshot 3" width="100%"></td>
+    <td><img src="images/4.png" alt="Screenshot 4" width="100%"></td>
+  </tr>
+</table>
+
+------------------------------------------------------------------------
+
 ## Project Structure
 
 pharma-ecom/ ├── frontend/ \# React + TypeScript frontend (Vite) ├──
